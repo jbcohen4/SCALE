@@ -10,6 +10,8 @@ from dataclasses import dataclass
 
 from uuid import uuid4
 
+import pandas as pd
+
 initial_window_dimensions = { # these numbers will be used to display the inital window
     "x": 50,
     "y": 50,
@@ -97,17 +99,18 @@ def run_gui():
 
     # make plot -------------------------------------------------------------------------------------------------------
     fig, ax = plt.subplots()
+    fig.subplots_adjust(left=0.15) # give more room for the ylabel
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas_widget = canvas.get_tk_widget()
     canvas_widget.place(x=600, y=100)
 
-    repopulate_graph(ax, canvas)
+    populate_graph_with_real_data(ax, canvas)
     
 
 
 
     # place button ----------------------------------------------------------------------------------------------------
-    button = tk.Button(root, text="regenerate data", command=lambda: repopulate_graph(ax, canvas))
+    button = tk.Button(root, text="regenerate data", command=lambda: populate_graph_with_real_data(ax, canvas))
     button.place(x=70, y=300)
 
 
@@ -127,15 +130,25 @@ def add_noise(numbers):
     import random
     return [x + random.uniform(-1, 1) for x in numbers]
 
-def generate_data():
+def generate_random_data():
     xs = np.arange(0, 5, 0.1)
     ys = add_noise(xs)
     return (xs, ys)
 
-def repopulate_graph(ax, canvas):
+def repopulate_graph_with_random_data(ax, canvas):
     ax.clear()
-    xs, ys = generate_data()
+    xs, ys = generate_random_data()
     ax.plot(xs, ys)
     ax.set_xlabel("Fluences (n/cm^2)")
     canvas.draw()
 
+def populate_graph_with_real_data(ax, canvas):
+    ax.clear()
+    import pandas as pd
+    df = pd.read_csv('output/fluences-vs-temp.csv')
+    xs = [row['Fluences (n/cm^2)'] for _, row in df.iterrows()]
+    ys = [row['Temperature (Celsius)'] for _, row in df.iterrows()]
+    ax.plot(xs, ys)
+    ax.set_xlabel('Fluences (n/cm^2)')
+    ax.set_ylabel('Temp (°C)')
+    canvas.draw()

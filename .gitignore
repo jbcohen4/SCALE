@@ -164,3 +164,6 @@ xyce/
 
 # don't track the temp files
 tempfiles/
+
+# don't track the output files
+output/
