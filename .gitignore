@@ -167,3 +167,8 @@ tempfiles/
 
 # don't track the output files
 output/
+
+
+# don't track any .spec or .exe
+*.spec
+*.exe
