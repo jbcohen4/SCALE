@@ -111,7 +111,7 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
         "NPN_N": npn_n
     }
 
-    processed_text = process_file_with_replacements("netlists/t1.cir", d)
+    processed_text = process_file_with_replacements("netlists/AD590_template.cir", d)
 
     temp_netlist_name = "tempfiles/netlist.cir"
 
