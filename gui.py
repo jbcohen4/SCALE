@@ -139,3 +139,28 @@ def repopulate_graph(ax, canvas):
     ax.set_xlabel("Fluences (n/cm^2)")
     canvas.draw()
 
+# import tkinter as tk
+# from tkinter import ttk
+
+# import matplotlib.pyplot as plt
+# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+# import numpy as np
+
+# def run_gui():
+#     root = tk.Tk()
+#     root.title("Simple GUI")
+
+#     fig, ax = plt.subplots()
+#     canvas = FigureCanvasTkAgg(fig, master=root)
+#     canvas_widget = canvas.get_tk_widget()
+#     canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+#     xs = np.arange(0, 5, 0.1)
+#     ys = np.sin(xs)
+#     ax.plot(xs, ys)
+#     ax.set_xlabel("X-axis")
+
+#     root.mainloop()
+
+# run_gui()
