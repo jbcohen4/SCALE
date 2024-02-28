@@ -150,5 +150,6 @@ def populate_graph_with_real_data(ax, canvas):
     ys = [row['Temperature (Celsius)'] for _, row in df.iterrows()]
     ax.plot(xs, ys)
     ax.set_xlabel('Fluences (n/cm^2)')
+    ax.set_xscale('log')
     ax.set_ylabel('Temp (°C)')
     canvas.draw()
