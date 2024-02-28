@@ -142,6 +142,7 @@ def repopulate_graph_with_random_data(ax, canvas):
     ax.set_xlabel("Fluences (n/cm^2)")
     canvas.draw()
 
+
 def populate_graph_with_real_data(ax, canvas):
     ax.clear()
     import pandas as pd
@@ -153,3 +154,4 @@ def populate_graph_with_real_data(ax, canvas):
     ax.set_xscale('log')
     ax.set_ylabel('Temp (°C)')
     canvas.draw()
+
