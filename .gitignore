@@ -162,12 +162,6 @@ cython_debug/
 # don't track the xyce folder
 xyce/
 
-# don't track the temp files
-tempfiles/
-
-# don't track the output files
-output/
-
 
 # don't track any .spec or .exe
 *.spec
