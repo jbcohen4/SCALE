@@ -165,5 +165,15 @@ save_button.grid(row=3, column=1, padx=5, pady=5)
 clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height)
 clear_button.grid(row=4, column=1, padx=5, pady=5)
 
+
+def on_closing():
+    """I was having issues with the application not closing all th way when I pressed the X button on the GUI.
+    This function fixed that."""
+    plt.close('all')  # Close all Matplotlib figures
+    root.destroy()  # Destroy the Tkinter window
+
+root.protocol("WM_DELETE_WINDOW", on_closing) # set the 'on_closing()' function to be called when you exit the program
+
+
 # Running the window
 root.mainloop()
