@@ -64,6 +64,7 @@ def execute_function(sample_data):
     fig, ax = plt.subplots()
     ax.plot(xs, ys)
     ax.set_xlabel(xs_column_name)
+    ax.set_xscale('log')
     ax.set_ylabel(ys_column_name)
     ax.set_title("Line Chart")
     plt.subplots_adjust(left=0.2)
