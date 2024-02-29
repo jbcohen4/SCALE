@@ -39,7 +39,7 @@ def validate_numerical(value):
 # Execute function
 def execute_function(sample_data):
 
-    csv_file_path = 'testdata.csv' 
+    csv_file_path = 'output/fluences-vs-temp.csv' 
     with open(csv_file_path, 'r') as file:
         csv_reader = csv.reader(file)
         header_row = next(csv_reader)
