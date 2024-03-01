@@ -1,0 +1,9 @@
+
+Run "pyinstaller gui.spec" from terminal.
+
+If you add dependencies that are not python files, you will probably need to edit the gui.spec file to reflect that. ChatGPT or Bard can help.
+
+You will also need to change the source code of anywhere where you use an external file (such as reading a .csv file, or using the Xyce.exe executable).
+Again, ChatGPT and Bard are your friends.
+
+
