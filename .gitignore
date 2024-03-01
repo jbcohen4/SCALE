@@ -163,6 +163,6 @@ cython_debug/
 xyce/
 
 
-# don't track any .spec or .exe
-*.spec
+# don't track any .exe
 *.exe
+

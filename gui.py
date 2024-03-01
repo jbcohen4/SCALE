@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-import csv
+import csv, os, sys
 
 # Create Window for GUI
 root = tk.Tk()
@@ -38,8 +38,14 @@ def validate_numerical(value):
 
 # Execute function
 def execute_function(sample_data):
+    if getattr(sys, 'frozen', False): # check if the application has been bundled with PyInstaller (ask ChatGPT to explain this line, it's a bit counterintuitive)
+        # If the application is run by PyInstaller, you need to use the sys._MEIPASS thing
+        base_path = sys._MEIPASS
+    else:
+        # If the application is run from a script, the CSV file is in the current directory
+        base_path = os.path.dirname(__file__)
 
-    csv_file_path = 'output/fluences-vs-temp.csv' 
+    csv_file_path = os.path.join(base_path, 'output/fluences-vs-temp.csv')
     with open(csv_file_path, 'r') as file:
         csv_reader = csv.reader(file)
         header_row = next(csv_reader)
