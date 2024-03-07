@@ -1,4 +1,3 @@
-
 class Err:
     def __init__(self, message):
         self.message = message
@@ -11,6 +10,21 @@ def read_file_as_string(file_path):
     try:
         with open(file_path, 'r') as file:
             return file.read()
+    except FileNotFoundError:
+        return Err("File not found.")
+
+def read_values_from_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            
+            # Assuming each line contains a key-value pair separated by ':'
+            values = {}
+            for line in lines:
+                key, value = map(str.strip, line.split(':'))
+                values[key] = value
+                
+            return values
     except FileNotFoundError:
         return Err("File not found.")
 
@@ -122,7 +136,7 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
     outtext = read_file_as_string(outfile)
     out_data = parse_output_data(outtext)
     for voltage, current in out_data:
-        if voltage == 5.0:
+        if voltage == float(input_voltage):
             return current
     assert False
 
@@ -132,6 +146,7 @@ def all_data_points_fluences_vs_current():
     npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
     pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
 
+    # Handling Fluence in the GUI as of now 
     for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
         avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
         current = generate_single_current_value(
@@ -153,7 +168,7 @@ def write_fluences_vs_temp_to_csv(filename):
     import csv
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['Fluences (n/cm^2)', 'Temperature (Celsius)'])  # Writing the headers
+        writer.writerow(['Fluences (n/cm^2)', 'Temp (°C)'])  # Writing the headers
         
         # Calling the generator and writing its output to the CSV
         for avg_fluences, current in all_data_points_fluences_vs_current():
@@ -162,6 +177,29 @@ def write_fluences_vs_temp_to_csv(filename):
 
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+    
+    # shared variables
+    input_voltage = 0
+    input_temperature = 0
+    input_fluence_min = 0
+    input_fluence_max = 0
+
+    # shared values form gui.py
+    file_path = 'shared-config/shared_values.txt'
+
+    # Read values from the file
+    values = read_values_from_file(file_path)
+
+    # Check if the values were successfully read
+    if not is_error(values):
+        # Assign the values to variables
+        input_voltage = values.get('Voltage', None)
+        input_temperature = values.get('Temperature', None)
+        input_fluence_min = values.get('Fluence Min', None)
+        input_fluence_max = values.get('Fluence Max', None)
+    else:
+        print(values.message)
+
     write_fluences_vs_temp_to_csv('output/fluences-vs-temp.csv')
 
 

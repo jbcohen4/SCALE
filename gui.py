@@ -1,157 +1,212 @@
+import subprocess
 import tkinter as tk
-from tkinter import ttk
+from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
 import numpy as np
 
-from dataclasses import dataclass
+import csv
 
-from uuid import uuid4
+# Create Window for GUI
+root = tk.Tk()
 
-import pandas as pd
+# Set title of the window
+root.title("Radiation on BJT explorer")
 
-initial_window_dimensions = { # these numbers will be used to display the inital window
-    "x": 50,
-    "y": 50,
-    "width": 1500,
-    "height": 1000
-}
+# Set dimensions of the window
+root.geometry("800x750")
 
-parts = ["part 1", "part 2", "part 3"]
+# Set the background color of the root window
+root.configure(bg="darkgray")
 
-sample_data = {
-    'xs': [1, 2, 3, 4, 5],
-    'ys': [2, -3, 5, -7, 11]
-}
+# Adding frames for parts and specifications
+def create_frame(row, column, text, width=2, height=2):
+    frame = LabelFrame(root, text=text, padx=10, pady=10, borderwidth=2, relief="solid", width=width, height=height)
+    frame.grid(row=row, column=column, padx=10, pady=10, columnspan=width, rowspan=height, sticky="ewns")
 
+    return frame
 
-button_id = uuid4()
+# Validation function to allow only numerical values
+def validate_numerical(value):
+    if value == '':
+        return True
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
+# Backend function
+def execute_backend():
 
-@dataclass
-class Dimensions:
-    x: int
-    y: int
-    width: int
-    height: int
+    # proper variable names
+    Voltage = textbox_dataset_vcc.get()
+    Temperature = textbox_temp.get()
+    Fluence_Min = textbox_fluences_min.get()
+    Fluence_Max = textbox_fluences_max.get()
 
+    # Write values to a file
+    with open('shared-config/shared_values.txt', 'w') as file:
+        file.write(f"Voltage: {Voltage}\n")
+        file.write(f"Temperature: {Temperature}\n")
+        file.write(f"Fluence Min: {Fluence_Min}\n")
+        file.write(f"Fluence Max: {Fluence_Max}\n")
 
-def run_gui():
-    # make window ----------------------------------------------------------------------------------------------------
-    root = tk.Tk()
-    root.title("Radiation on BJT explorer")
-    dims = initial_window_dimensions # rename shorter so it's easier to use. The long name is also good because it's descriptive
-    root.geometry(f"{dims['width']}x{dims['height']}+{dims['x']}+{dims['y']}")
-    root.resizable(True, True)
-    root.config(bg="gray")
-
-    # place part label -----------------------------------------------------------------------------------------------
-    part_lbl = tk.Label(root, text="Choose a part:")
-    part_lbl.place(x=20, y=20)
-    root.update() # this is needed so that objects know thier correct dimensions
-
-    part_lbl_dims = get_lbl_dims(part_lbl)
-
-
-    part_combobox = ttk.Combobox(root, values=parts)
-    part_combobox.place(
-        x=part_lbl_dims.x + part_lbl_dims.width + 20,
-        y=part_lbl_dims.y
-    )
-    part_combobox.current(0) # set default value
-    part_combobox.config(width=20)
-
-
-    # place specification label ---------------------------------------------------------------------------------------
-    spec_lbl = tk.Label(root, text="Choose a specification:")
-    spec_lbl_x = part_lbl_dims.x
-    spec_lbl_y = part_lbl_dims.y + part_lbl_dims.height + 20
-    spec_lbl.place(x=spec_lbl_x, y=spec_lbl_y)
-    root.update()
-
-    spec_lbl_dims = get_lbl_dims(spec_lbl)
-    spec_combobox = ttk.Combobox(root, values=["Vref", "option 2"])
-    spec_combobox.place(
-        x=spec_lbl_dims.x + spec_lbl_dims.width + 20,
-        y=spec_lbl_dims.y
-    )
-
-    spec_combobox.current(0)
-
-    # place dataset label ---------------------------------------------------------------------------------------------
-    dataset_lbl = tk.Label(root, text="Choose a dataset:")
-    dataset_lbl_x = spec_lbl_dims.x
-    dataset_lbl_y = spec_lbl_dims.y + spec_lbl_dims.height + 20
-    dataset_lbl.place(x=dataset_lbl_x, y=dataset_lbl_y)
-    root.update()
-
-    dataset_lbl_dims = get_lbl_dims(dataset_lbl)
-    dataset_combobox = ttk.Combobox(root, values=["25", "option 2"])
-    dataset_combobox.place(
-        x=dataset_lbl_dims.x + dataset_lbl_dims.width + 20,
-        y=dataset_lbl_dims.y
-    )
-
-    dataset_combobox.current(0)
+    # Build the command to run backend.py
+    command = ["python", "backend.py"]
+    # Run backend.py as a separate process
+    subprocess.run(command)
     
+    # Validate the input before converting to float
+    if Fluence_Min and Fluence_Max:
+        x_range_to_include = (float(Fluence_Min), float(Fluence_Max))
+        execute_function(sample_data, x_range_to_include)
+    else:
+        execute_function(sample_data)
 
-    # make plot -------------------------------------------------------------------------------------------------------
+# Execute function
+def execute_function(sample_data, x_range=None):
+
+    csv_file_path = 'output/fluences-vs-temp.csv' 
+    with open(csv_file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+        header_row = next(csv_reader)
+    
+        xs_column_name = header_row[0]
+        ys_column_name = header_row[1]
+
+        for row in csv_reader:
+            xs_value = float(row[0])
+            ys_value = float(row[1])
+
+            if x_range is None or (x_range[0] <= xs_value <= x_range[1]):
+                sample_data['xs'].append(xs_value)
+                sample_data['ys'].append(ys_value)
+
+    # Frame 4 for graph
+    graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
+
+    # Plotting the line chart
+    xs = np.array(sample_data['xs'])
+    ys = np.array(sample_data['ys'])
+    Chart_title = "Line Chart"
+
     fig, ax = plt.subplots()
-    fig.subplots_adjust(left=0.15) # give more room for the ylabel
-    canvas = FigureCanvasTkAgg(fig, master=root)
+    ax.plot(xs, ys)
+    ax.set_xlabel(xs_column_name)
+    ax.set_ylabel(ys_column_name)
+    ax.set_title(Chart_title)
+    plt.subplots_adjust(left=0.2)
+
+    # Embedding the plot in the Tkinter window
+    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
     canvas_widget = canvas.get_tk_widget()
-    canvas_widget.place(x=600, y=100)
+    canvas_widget.grid(row=0, column=0, sticky="nsew")
+    graph_frame.update_idletasks()
 
-    populate_graph_with_real_data(ax, canvas)
-    
+# Clear function 
+def clear_function():
+    textbox_dataset_vcc.delete(0, tk.END)
+    textbox_temp.delete(0, tk.END)
+    textbox_fluences_min.delete(0, tk.END)
+    textbox_fluences_max.delete(0, tk.END)
+    print("Clear all the fields")
 
+    # Clear the graph
+    sample_data['xs'] = []
+    sample_data['ys'] = []
 
-
-    # place button ----------------------------------------------------------------------------------------------------
-    button = tk.Button(root, text="regenerate data", command=lambda: populate_graph_with_real_data(ax, canvas))
-    button.place(x=70, y=300)
-
-
-
-    root.mainloop() # start the gui
-
-
-def get_lbl_dims(lbl: tk.Label) -> Dimensions:
-    return Dimensions(
-        x=lbl.winfo_x(),
-        y=lbl.winfo_y(),
-        width=lbl.winfo_width(),
-        height=lbl.winfo_height()
-    )
-
-def add_noise(numbers):
-    import random
-    return [x + random.uniform(-1, 1) for x in numbers]
-
-def generate_random_data():
-    xs = np.arange(0, 5, 0.1)
-    ys = add_noise(xs)
-    return (xs, ys)
-
-def repopulate_graph_with_random_data(ax, canvas):
-    ax.clear()
-    xs, ys = generate_random_data()
-    ax.plot(xs, ys)
-    ax.set_xlabel("Fluences (n/cm^2)")
-    canvas.draw()
+    # Find and destroy the existing graph frame
+    for widget in root.winfo_children():
+        if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+            widget.destroy()
 
 
-def populate_graph_with_real_data(ax, canvas):
-    ax.clear()
-    import pandas as pd
-    df = pd.read_csv('output/fluences-vs-temp.csv')
-    xs = [row['Fluences (n/cm^2)'] for _, row in df.iterrows()]
-    ys = [row['Temperature (Celsius)'] for _, row in df.iterrows()]
-    ax.plot(xs, ys)
-    ax.set_xlabel('Fluences (n/cm^2)')
-    ax.set_xscale('log')
-    ax.set_ylabel('Temp (°C)')
-    canvas.draw()
+# Frame 1
+frame1 = create_frame(0, 0, "", width=2, height=2)
 
+label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bold")
+label_Parts.grid(row=0, column=0, sticky="e")
+
+# Dropdown Parts
+options_part = ["AD590", "TL431", "TEMP0"]
+var1 = StringVar()
+var1.set(options_part[0])
+dropdown_part = OptionMenu(frame1, var1, *options_part)
+dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+
+label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold")
+label_Specifications.grid(row=1, column=0, sticky="e")
+
+# Dropdown Specifications
+options_specifications = ["Vref", "SPECIFICATION 01", "SPECIFICATION 02"]
+var2 = StringVar()
+var2.set(options_specifications[0])
+dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
+dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+
+label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold")
+label_dataset.grid(row=2, column=0, sticky="we")
+
+label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold")
+label_dataset_vcc.grid(row=3, column=0, sticky="e")
+
+# Text Entry for Dataset with border and padding
+validate_dataset_vcc = (root.register(validate_numerical), '%P')
+textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc)
+textbox_dataset_vcc.grid(row=3, column=1, sticky="w")
+
+# Frame 2
+frame2 = create_frame(0, 2, "", width=2, height=2)
+
+label_temp = tk.Label(frame2, text="Temperature (C):", padx=5, pady=5, font="Arial 9 bold")
+label_temp.grid(row=0, column=0, sticky="e")
+
+# Text Entry for Temperature with border and padding
+validate_temp = (root.register(validate_numerical), '%P')
+textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp)
+textbox_temp.grid(row=0, column=1, sticky="w")
+
+label_fluences_min = tk.Label(frame2, text="Fluences Min(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_min.grid(row=1, column=0, sticky="e")
+
+# Text Entry for Fluences Min with border and padding
+validate_fluences_min = (root.register(validate_numerical), '%P')
+textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min)
+textbox_fluences_min.grid(row=1, column=1, sticky="w")
+
+label_fluences_max = tk.Label(frame2, text="Fluences Max(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_max.grid(row=2, column=0, sticky="e")
+
+# Text Entry for Fluences Max with border and padding
+validate_fluences_max = (root.register(validate_numerical), '%P')
+textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max)
+textbox_fluences_max.grid(row=2, column=1, sticky="w")
+
+# Frame 3
+frame3 = create_frame(0, 4, "", width=4)
+# Button size
+button_width = 10
+button_height = 1
+
+# Sample data
+sample_data = {'xs': [], 'ys': []}
+
+#Buttons
+#execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_function(sample_data), width=button_width, height=button_height)
+execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_backend(), width=button_width, height=button_height)
+execute_button.grid(row=0, column=1, padx=5, pady=5)
+
+change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height)
+change_scale_button.grid(row=2, column=1, padx=5, pady=5)
+
+save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height)
+save_button.grid(row=3, column=1, padx=5, pady=5)
+
+clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height)
+clear_button.grid(row=4, column=1, padx=5, pady=5)
+
+
+# Running the window
+root.mainloop()
