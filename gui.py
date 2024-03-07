@@ -60,7 +60,10 @@ def execute_backend():
     
     # Validate the input before converting to float
     if Fluence_Min and Fluence_Max:
-        x_range_to_include = (float(Fluence_Min), float(Fluence_Max))
+        range_min = float(Fluence_Min) * 10**11
+        range_max = float(Fluence_Max)  * 10**13
+        print(range_min, range_max)
+        x_range_to_include = (range_min , range_max)
         execute_function(sample_data, x_range_to_include)
     else:
         execute_function(sample_data)
@@ -68,18 +71,17 @@ def execute_backend():
 # Execute function
 def execute_function(sample_data, x_range=None):
 
-    csv_file_path = 'output/fluences-vs-temp.csv' 
+    csv_file_path = 'output/fluences-vs-Iout.csv' 
     with open(csv_file_path, 'r') as file:
         csv_reader = csv.reader(file)
         header_row = next(csv_reader)
     
         xs_column_name = header_row[0]
         ys_column_name = header_row[1]
-
         for row in csv_reader:
             xs_value = float(row[0])
             ys_value = float(row[1])
-
+            
             if x_range is None or (x_range[0] <= xs_value <= x_range[1]):
                 sample_data['xs'].append(xs_value)
                 sample_data['ys'].append(ys_value)
@@ -94,6 +96,7 @@ def execute_function(sample_data, x_range=None):
 
     fig, ax = plt.subplots()
     ax.plot(xs, ys)
+    ax.set_xscale('log') # Set the x-axis to log scale
     ax.set_xlabel(xs_column_name)
     ax.set_ylabel(ys_column_name)
     ax.set_title(Chart_title)
@@ -140,7 +143,7 @@ label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, 
 label_Specifications.grid(row=1, column=0, sticky="e")
 
 # Dropdown Specifications
-options_specifications = ["Vref", "SPECIFICATION 01", "SPECIFICATION 02"]
+options_specifications = ["I_out", "SPECIFICATION 01", "SPECIFICATION 02"]
 var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
@@ -168,21 +171,25 @@ validate_temp = (root.register(validate_numerical), '%P')
 textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp)
 textbox_temp.grid(row=0, column=1, sticky="w")
 
-label_fluences_min = tk.Label(frame2, text="Fluences Min(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
 # Text Entry for Fluences Min with border and padding
 validate_fluences_min = (root.register(validate_numerical), '%P')
 textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min)
 textbox_fluences_min.grid(row=1, column=1, sticky="w")
+label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range1.grid(row=1, column=2, sticky="e")
 
-label_fluences_max = tk.Label(frame2, text="Fluences Max(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
 # Text Entry for Fluences Max with border and padding
 validate_fluences_max = (root.register(validate_numerical), '%P')
 textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max)
 textbox_fluences_max.grid(row=2, column=1, sticky="w")
+label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range2.grid(row=2, column=2, sticky="e")
 
 # Frame 3
 frame3 = create_frame(0, 4, "", width=4)

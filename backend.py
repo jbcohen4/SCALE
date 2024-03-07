@@ -163,17 +163,21 @@ def current_to_temp_for_AD590(current: float) -> float:
     Temp = Current * 10 ^ 6 - 273, where Temp is in °C, and Current is in Amps."""
     return current * 10**6 - 273
 
+# added by Rahul - as current output is required in microamps for y-axis
+def current_to_Iout_for_AD590(current: float) -> float:
+    return current * 10**6
+
 # Function to write the output of the generator to a CSV file
 def write_fluences_vs_temp_to_csv(filename):
     import csv
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['Fluences (n/cm^2)', 'Temp (°C)'])  # Writing the headers
+        writer.writerow(['Fluences (n/cm^2)', 'Iout (µA)'])  # Writing the headers
         
         # Calling the generator and writing its output to the CSV
         for avg_fluences, current in all_data_points_fluences_vs_current():
-            temp = current_to_temp_for_AD590(current)
-            writer.writerow([avg_fluences, temp])
+            Iout = current_to_Iout_for_AD590(current)
+            writer.writerow([avg_fluences, Iout])
 
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
@@ -200,6 +204,6 @@ if __name__ == "__main__": # python best practice. Ask google or ChatGPT if conf
     else:
         print(values.message)
 
-    write_fluences_vs_temp_to_csv('output/fluences-vs-temp.csv')
+    write_fluences_vs_temp_to_csv('output/fluences-vs-Iout.csv')
 
 
