@@ -166,12 +166,11 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     ys = []
     for fluences, current in all_data_points_fluences_vs_current(voltage):
         if fluences_min <= fluences <= fluences_max:
-            temp = current_to_temp_for_AD590(current)
             xs.append(fluences)
-            ys.append(temp)
+            ys.append(current * 10 ** 6) # convert amps to micro amps
     return {
         'Fluences (n/cm^2)': xs,
-        'Temperature (Celsius)': ys
+        'Current (micro amps)': ys
     }
 
 
