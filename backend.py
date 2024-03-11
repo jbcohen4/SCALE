@@ -98,7 +98,7 @@ def parse_output_data(content: str):
     return data_tuples
 
 
-def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float) -> float:
+def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
     from pathlib import Path
 
     outfile = Path("tempfiles/t1.out")
@@ -122,12 +122,12 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
     outtext = read_file_as_string(outfile)
     out_data = parse_output_data(outtext)
     for voltage, current in out_data:
-        if voltage == 5.0:
+        if voltage == desired_voltage:
             return current
     assert False
 
 
-def all_data_points_fluences_vs_current():
+def all_data_points_fluences_vs_current(desired_voltage):
     import pandas as pd
     npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
     pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
@@ -138,7 +138,8 @@ def all_data_points_fluences_vs_current():
             pnp_is=data_pnp['Is'],
             pnp_n=data_pnp['n'],
             npn_is=data_npn['Is'],
-            npn_n=data_npn['n']
+            npn_n=data_npn['n'],
+            desired_voltage=desired_voltage
         )
         yield (avg_fluences, current)
 
@@ -149,16 +150,29 @@ def current_to_temp_for_AD590(current: float) -> float:
     return current * 10**6 - 273
 
 # Function to write the output of the generator to a CSV file
-def write_fluences_vs_temp_to_csv(filename):
+def write_fluences_vs_temp_to_csv(filename, desired_voltage=5.0):
     import csv
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Fluences (n/cm^2)', 'Temperature (Celsius)'])  # Writing the headers
         
         # Calling the generator and writing its output to the CSV
-        for avg_fluences, current in all_data_points_fluences_vs_current():
+        for avg_fluences, current in all_data_points_fluences_vs_current(desired_voltage):
             temp = current_to_temp_for_AD590(current)
             writer.writerow([avg_fluences, temp])
+
+def generate_data_for_AD590(voltage, fluences_min, fluences_max):
+    xs = []
+    ys = []
+    for fluences, current in all_data_points_fluences_vs_current(voltage):
+        if fluences_min <= fluences <= fluences_max:
+            temp = current_to_temp_for_AD590(current)
+            xs.append(fluences)
+            ys.append(temp)
+    return {
+        'Fluences (n/cm^2)': xs,
+        'Temperature (Celsius)': ys
+    }
 
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
