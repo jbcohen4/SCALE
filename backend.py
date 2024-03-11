@@ -176,6 +176,6 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
 
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
-    write_fluences_vs_temp_to_csv('output/fluences-vs-Iout.csv')
+    write_fluences_vs_temp_to_csv('output/fluences-vs-temp.csv')
 
 
