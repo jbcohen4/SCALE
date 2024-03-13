@@ -143,24 +143,6 @@ def all_data_points_fluences_vs_current(desired_voltage):
         )
         yield (avg_fluences, current)
 
-def current_to_temp_for_AD590(current: float) -> float:
-    """The AD590 circuit is a temperature sensor. Higher temperatures will cause it to output more current.
-    There is a formula to calculate the temperature given the current. 
-    Temp = Current * 10 ^ 6 - 273, where Temp is in °C, and Current is in Amps."""
-    return current * 10**6 - 273
-
-# Function to write the output of the generator to a CSV file
-def write_fluences_vs_temp_to_csv(filename, desired_voltage=5.0):
-    import csv
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Fluences (n/cm^2)', 'Temperature (Celsius)'])  # Writing the headers
-        
-        # Calling the generator and writing its output to the CSV
-        for avg_fluences, current in all_data_points_fluences_vs_current(desired_voltage):
-            temp = current_to_temp_for_AD590(current)
-            writer.writerow([avg_fluences, temp])
-
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
     ys = []
@@ -170,11 +152,8 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
             ys.append(current * 10 ** 6) # convert amps to micro amps
     return {
         'Fluences (n/cm^2)': xs,
-        'Current (micro amps)': ys
+        'I_out (µA)': ys
     }
 
-
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
-    write_fluences_vs_temp_to_csv('output/fluences-vs-temp.csv')
-
-
+    pass

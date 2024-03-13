@@ -12,7 +12,7 @@ R7 20 0 1m
 .dc VIN 0 30 1
 
 *Output
-.print dc format=noindex file=tempfiles\t1.out
+.print dc format=noindex file=tempfiles\xyce_output\xoutput_20.out
 + V(2)
 + I(VOUT)
 
@@ -112,11 +112,11 @@ J1 8 16 11 NJF_TYP
 + RD = 0.01      RS = 1e-4 
 + CGS = 3E-12    CGD=1.5E-12     IS=5E-10)
 
-.model DMODPNP D (IS = 2.762223010124091e-13
-+ N = 1.289584935620763)
+.model DMODPNP D (IS = 4.094333542903834e-15
++ N = 1.210204905319184)
 
-.model DMODNPN D (IS = 7.480791508181291e-13
-+ N = 1.747034065712423)
+.model DMODNPN D (IS = 1.011075101124806e-14
++ N = 1.669250197376839)
 
 *end of the netlist
 .end
