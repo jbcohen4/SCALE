@@ -1,13 +1,4 @@
 
-import os
-import subprocess
-from pathlib import Path
-import concurrent.futures
-from typing import List
-import pandas as pd
-import re # regex library
-from constants import *
-
 class Err:
     def __init__(self, message):
         self.message = message
@@ -30,6 +21,8 @@ def format_string_with_dict(content: str, replacements_dict):
     """Example: given: content="Hi. {x} says {y}." and replacements_dict={"x": bob, "y": howdy}, 
     This func will return "Hi. bob says howdy."
     """
+
+    import re # regex library
     # Find all placeholders in the content
     placeholders = re.findall(r'\{(.*?)\}', content) # uses a regex from chatgpt. It finds all substrings enclosed by {}
     
@@ -61,27 +54,12 @@ def write_string_to_file(filename, string):
     with open(filename, 'w') as file:
         file.write(string)
 
-
-def delete_files_in_folder(folder_path):
-    # Check if the folder exists
-    if not os.path.exists(folder_path):
-        print(f"Folder '{folder_path}' not found.")
-        return
-
-    # Get a list of files in the folder
-    files_to_delete = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-
-    # Delete each file
-    for file_name in files_to_delete:
-        file_path = os.path.join(folder_path, file_name)
-        os.remove(file_path)
-        # print(f"Deleted file: {file_path}")
-
 def run_command(command):
     """Example usage:
     command = "echo Hello, world!"
     stdout, stderr, exit_code = run_command(command)
     """
+    import subprocess
     # Run the command and capture the output
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -107,6 +85,7 @@ def parse_output_data(content: str):
             (30.0, 3.00012198e-04)
         ]
     """
+    import re
     # Regular expression to match lines with two floating-point numbers
     pattern = r'\s*([\d\.\+\-eE]+)\s+([\d\.\+\-eE]+)'
     
@@ -119,10 +98,10 @@ def parse_output_data(content: str):
     return data_tuples
 
 
-def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, idx: int):
-    # Adjust the output file and template names based on the index
-    outfile = Path(get_output_path(idx))
-    temp_netlist_name = get_netlist_path(idx)
+def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
+    from pathlib import Path
+
+    outfile = Path("tempfiles/t1.out")
 
     d = {
         "output_filename": outfile,
@@ -131,74 +110,38 @@ def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, d
         "NPN_IS": npn_is,
         "NPN_N": npn_n
     }
-    
-    processed_text = process_file_with_replacements(NETLIST_AD590, d)
+
+    processed_text = process_file_with_replacements("netlists/AD590_template.cir", d)
+
+    temp_netlist_name = "tempfiles/netlist.cir"
+
     write_string_to_file(temp_netlist_name, processed_text)
 
+    run_command(f"xyce\\Xyce.exe {temp_netlist_name}")
 
-def run_commands_in_parallel(command_template="xyce\\Xyce.exe {file_name}", num_files:int = 1):
-    def execute_command(file_name):
-        command = command_template.format(file_name=file_name)
-        subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    outtext = read_file_as_string(outfile)
+    out_data = parse_output_data(outtext)
+    for voltage, current in out_data:
+        if voltage == desired_voltage:
+            return current
+    assert False
 
-    # Generate a list of file names based on the specified format
-    file_names = [f"tempfiles/netlist/netlist_{idx}.cir" for idx in range(num_files)]
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks for each file in the list
-        futures = [executor.submit(execute_command, file_name) for file_name in file_names]
-
-        # Wait for all tasks to complete
-        concurrent.futures.wait(futures)
-
-def find_current_for_desired_voltage(index_count, desired_voltage: float) -> List[float]:
-    # a serial function
-    result = []
-    for index in range(index_count): 
-        outfile = (f"tempfiles/xyce_output/xoutput_{index}.out")
-
-        try:
-            outtext = read_file_as_string(outfile)
-            out_data = parse_output_data(outtext)
-            
-            for voltage, current in out_data:
-                if voltage == desired_voltage:
-                    result.append(current)
-            
-        except Exception as e:
-            print(f"Error processing {outfile}: {str(e)}")
-    return result
 
 def all_data_points_fluences_vs_current(desired_voltage):
+    import pandas as pd
     npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
     pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
-    index_count = len(npn_df)
-    fluences = []
-    
-    # Clean the previous netlist files
-    netlist_folder_path = OUTPUT_DIR
-    delete_files_in_folder(netlist_folder_path)
-    xyce_output_folder_path = NETLIST_DIR
-    delete_files_in_folder(xyce_output_folder_path)
 
-    # write the netlists serially
     for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
         avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
-        generate_netlist(
+        current = generate_single_current_value(
             pnp_is=data_pnp['Is'],
             pnp_n=data_pnp['n'],
             npn_is=data_npn['Is'],
             npn_n=data_npn['n'],
-            desired_voltage=desired_voltage,
-            idx=idx_npn
+            desired_voltage=desired_voltage
         )
-        fluences.append(avg_fluences)
-    
-    # calling the xyce to execute the netlist files
-    command_template = "xyce\\Xyce.exe {file_name}"
-    run_commands_in_parallel(command_template, index_count)
-        
-    currents = find_current_for_desired_voltage(index_count, desired_voltage)
-    return list(zip(fluences, currents))
+        yield (avg_fluences, current)
 
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
@@ -213,5 +156,4 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     }
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
-    data = generate_data_for_AD590(5.0, -float('inf'), float('inf'))
-    print(len(data.items()))
+    pass
