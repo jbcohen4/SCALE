@@ -3,6 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 import concurrent.futures
+from typing import List
 import pandas as pd
 import re # regex library
 from constants import *
@@ -118,8 +119,8 @@ def parse_output_data(content: str):
     return data_tuples
 
 
-def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, idx:int) -> float:
-    # Adjust the output file and template names based on the  index
+def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, idx: int):
+    # Adjust the output file and template names based on the index
     outfile = Path(get_output_path(idx))
     temp_netlist_name = get_netlist_path(idx)
 
@@ -149,7 +150,9 @@ def run_commands_in_parallel(command_template="xyce\\Xyce.exe {file_name}", num_
         # Wait for all tasks to complete
         concurrent.futures.wait(futures)
 
-def find_current_for_desired_voltage(index_count, desired_voltage, result_list):
+def find_current_for_desired_voltage(index_count, desired_voltage: float) -> List[float]:
+    # a serial function
+    result = []
     for index in range(index_count): 
         outfile = (f"tempfiles/xyce_output/xoutput_{index}.out")
 
@@ -159,17 +162,17 @@ def find_current_for_desired_voltage(index_count, desired_voltage, result_list):
             
             for voltage, current in out_data:
                 if voltage == desired_voltage:
-                    result_list[index][1] = current
+                    result.append(current)
             
         except Exception as e:
             print(f"Error processing {outfile}: {str(e)}")
-    return result_list
+    return result
 
 def all_data_points_fluences_vs_current(desired_voltage):
     npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
     pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
     index_count = len(npn_df)
-    result_list = []
+    fluences = []
     
     # Clean the previous netlist files
     netlist_folder_path = OUTPUT_DIR
@@ -177,6 +180,7 @@ def all_data_points_fluences_vs_current(desired_voltage):
     xyce_output_folder_path = NETLIST_DIR
     delete_files_in_folder(xyce_output_folder_path)
 
+    # write the netlists serially
     for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
         avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
         generate_netlist(
@@ -187,14 +191,14 @@ def all_data_points_fluences_vs_current(desired_voltage):
             desired_voltage=desired_voltage,
             idx=idx_npn
         )
-        result_list.append([avg_fluences, 0])
+        fluences.append(avg_fluences)
     
     # calling the xyce to execute the netlist files
     command_template = "xyce\\Xyce.exe {file_name}"
     run_commands_in_parallel(command_template, index_count)
         
-    result = find_current_for_desired_voltage(index_count, desired_voltage, result_list)
-    return result
+    currents = find_current_for_desired_voltage(index_count, desired_voltage)
+    return list(zip(fluences, currents))
 
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
