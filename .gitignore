@@ -166,3 +166,11 @@ xyce/
 # don't track any .exe
 *.exe
 
+
+# don't track all of the tempfiles, but do track the directory and subdirctories
+tempfiles/netlists/*
+!tempfiles/netlists/.gitkeep
+tempfiles/xyce_output/*
+!tempfiles/xyce_output/.gitkeep
+tempfiles/netlist.cir
+tempfiles/t1.out

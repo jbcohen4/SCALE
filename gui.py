@@ -1,4 +1,3 @@
-import subprocess
 import tkinter as tk
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 
@@ -7,7 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
 import csv
-
+import serial_backend
 import backend
 
 INFINITY = float('inf') 
