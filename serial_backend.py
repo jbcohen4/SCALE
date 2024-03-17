@@ -1,3 +1,4 @@
+inf = float('inf')
 
 class Err:
     def __init__(self, message):
@@ -156,4 +157,9 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     }
 
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+    data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
+    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    print(f"{x_axis_name}\t{y_axis_name}")
+    for i in range(5):
+        print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
     pass

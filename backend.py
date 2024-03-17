@@ -132,7 +132,7 @@ def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, d
         "NPN_N": npn_n
     }
     
-    processed_text = process_file_with_replacements(NETLIST_AD590, d)
+    processed_text = process_file_with_replacements(AD590_NETLIST_TEMPLATE, d)
     write_string_to_file(temp_netlist_name, processed_text)
 
 
@@ -142,7 +142,7 @@ def run_commands_in_parallel(command_template="xyce\\Xyce.exe {file_name}", num_
         subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Generate a list of file names based on the specified format
-    file_names = [f"tempfiles/netlist/netlist_{idx}.cir" for idx in range(num_files)]
+    file_names = [f"tempfiles/netlists/netlist_{idx}.cir" for idx in range(num_files)]
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit tasks for each file in the list
         futures = [executor.submit(execute_command, file_name) for file_name in file_names]
@@ -177,7 +177,7 @@ def all_data_points_fluences_vs_current(desired_voltage):
     # Clean the previous netlist files
     netlist_folder_path = OUTPUT_DIR
     delete_files_in_folder(netlist_folder_path)
-    xyce_output_folder_path = NETLIST_DIR
+    xyce_output_folder_path = TEMP_NETLIST_DIR
     delete_files_in_folder(xyce_output_folder_path)
 
     # write the netlists serially
