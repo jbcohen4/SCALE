@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-# does git see this comment
+
 a = Analysis(
     ['dummy.py'],
     pathex=[],
@@ -34,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    onefile=True
+    onefile=True,
 )

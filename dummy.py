@@ -1,9 +1,6 @@
 from typing import List, Tuple
-import making_exe
+import exe_tools
 from pathlib import Path
-
-print('version 10')
-
 
 import tempfile, os
 
@@ -124,12 +121,11 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
             "NPN_IS": npn_is,
             "NPN_N": npn_n
         }
-        path_to_AD590_template = making_exe.adjust_path("netlists/AD590_template.cir")
+        path_to_AD590_template = exe_tools.adjust_path("netlists/AD590_template.cir")
         filled_in_netlist_str = process_file_with_replacements(path_to_AD590_template, d)
         write_string_to_file(temp_netlist_file_name, filled_in_netlist_str)
-        path_to_xyce_exe = making_exe.adjust_path("xyce/Xyce.exe")
+        path_to_xyce_exe = exe_tools.adjust_path("xyce/Xyce.exe")
         cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
-        print(cmd_string)
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_file_name)
         out_data = parse_output_data(out_text)
@@ -143,79 +139,46 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
         os.remove(netlist_tempfile.name)
         os.remove(xyce_output_tempfile.name)
 
-current = generate_single_current_value(
-    pnp_is=9.69548962493215e-16,
-    pnp_n=1.202467780625198,
-    npn_is=1.393769132284331e-15,
-    npn_n=2.045270427325544,
-    desired_voltage=5.0
-)
 
-print(current)
+def all_data_points_fluences_vs_current(desired_voltage):
+    import pandas as pd
+    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
+    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
+    npn_df = pd.read_csv(npn_path)
+    pnp_df = pd.read_csv(pnp_path)
 
+    for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
+        avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
+        current = generate_single_current_value(
+            pnp_is=data_pnp['Is'],
+            pnp_n=data_pnp['n'],
+            npn_is=data_npn['Is'],
+            npn_n=data_npn['n'],
+            desired_voltage=desired_voltage
+        )
+        yield (avg_fluences, current)
 
+def generate_data_for_AD590(voltage, fluences_min, fluences_max):
+    xs = []
+    ys = []
+    for fluences, current in all_data_points_fluences_vs_current(voltage):
+        if fluences_min <= fluences <= fluences_max:
+            xs.append(fluences)
+            ys.append(current * 10 ** 6) # convert amps to micro amps
+    return {
+        'Fluences (n/cm^2)': xs,
+        'I_out (µA)': ys
+    }
 
-# temp_netlist_file = tempfile.NamedTemporaryFile(delete=False) # we need to be able to close the files without them getting deleted
-# temp_xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
-# try:
-#     # close both files so you can use them like regular
-#     temp_netlist_file.close()
-#     temp_xyce_output_file.close()
+def main():
+    data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
+    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    print(f"{x_axis_name}\t{y_axis_name}")
+    for i in range(5):
+        print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
+    pass
 
+if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+    main()
 
-#     outfile_name = Path(temp_xyce_output_file.name)
-#     netlist_name = Path(temp_netlist_file.name)
-#     d = {
-#         "output_filename": outfile_name,
-#         "PNP_IS": 9.69548962493215e-16,
-#         "PNP_N": 1.202467780625198,
-#         "NPN_IS": 1.393769132284331e-15,
-#         "NPN_N": 2.045270427325544,
-#     }
-#     processed_text = serial_backend.process_file_with_replacements("netlists/AD590_template.cir", d)
-#     serial_backend.write_string_to_file(netlist_name, processed_text)
-#     # read back the contents of the file so you can check that it was written corrctly
-#     netlist_contents = serial_backend.read_file_as_string(netlist_name)
-
-#     # actually run the command here
-#     path_to_xyce_exe = Path(making_exe.adjust_path("xyce/Xyce.exe"))
-#     cmd_string = f"{path_to_xyce_exe} {netlist_name}"
-#     print(f"running command '{cmd_string}'")
-#     stdout, stderr, return_code = serial_backend.run_command(f"{cmd_string}")
-#     response = serial_backend.read_file_as_string(outfile_name)
-#     print(len(response))
-# finally:
-#     temp_netlist_file.close()
-#     temp_xyce_output_file.close()
-#     os.remove(temp_netlist_file.name)
-#     os.remove(temp_xyce_output_file.name)
-#     print('everything was successfully deleted')
-
-
-
-# npn_df = making_exe.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
-# print("read npn_df complete")
-# pnp_df = making_exe.read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
-# print("read pnp_df complete")
-
-# outfile = Path("tempfiles/t1.out")
-
-# d = {
-#     "output_filename": outfile,
-#     "PNP_IS": 9.69548962493215e-16,
-#     "PNP_N": 1.202467780625198,
-#     "NPN_IS": 1.393769132284331e-15,
-#     "NPN_N": 2.045270427325544,
-# }
-
-# processed_text = serial_backend.process_file_with_replacements("netlists/AD590_template.cir", d)
-# print('text processing complete')
-
-# temp_netlist_name = "tempfiles/netlist.cir"
-
-# serial_backend.write_string_to_file(temp_netlist_name, processed_text)
-
-# path_to_xyce_exe = making_exe.adjust_path("xyce/Xyce.exe")
-# stdout, stderr, return_code = serial_backend.run_command(f"{path_to_xyce_exe}")
-# print(stdout)
 

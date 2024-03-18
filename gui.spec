@@ -5,7 +5,7 @@ a = Analysis(
     ['gui.py'],
     pathex=[],
     binaries=[],
-    datas=[("output/fluences-vs-temp.csv", "output")], # what exactly is going on here?
+    datas=[('csvs/*', 'csvs'), ('netlists/AD590_template.cir', 'netlists'), ('xyce/*', 'xyce')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    onefile=True, # makes it so pyinstaller knows you want a single dependency free .exe
+    onefile=True,
 )
