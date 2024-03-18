@@ -1,11 +1,15 @@
 from typing import List, Tuple
 import exe_tools
 from pathlib import Path
+import re, tempfile, os
+import pandas as pd
+from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH
+import concurrent.futures
 
-import tempfile, os
 
 
 inf = float('inf')
+
 
 class Err:
     def __init__(self, message):
@@ -33,8 +37,6 @@ def format_string_with_dict(content: str, replacements_dict) -> str:
     """Example: given: content="Hi. {x} says {y}." and replacements_dict={"x": bob, "y": howdy}, 
     This func will return "Hi. bob says howdy."
     """
-
-    import re # regex library
     # Find all placeholders in the content
     placeholders = re.findall(r'\{(.*?)\}', content) # uses a regex from chatgpt. It finds all substrings enclosed by {}
     
@@ -93,7 +95,6 @@ def parse_output_data(content: str) -> List[Tuple[float, float]]:
             (30.0, 3.00012198e-04)
         ]
     """
-    import re
     # Regular expression to match lines with two floating-point numbers
     pattern = r'\s*([\d\.\+\-eE]+)\s+([\d\.\+\-eE]+)'
     
@@ -106,7 +107,8 @@ def parse_output_data(content: str) -> List[Tuple[float, float]]:
     return data_tuples
 
 
-def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
+def generate_single_current_value_AD590(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
+    """This function is threadsafe and will work in the executable"""
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
     xyce_output_tempfile = tempfile.NamedTemporaryFile(delete=False)
     try:
@@ -121,10 +123,10 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
             "NPN_IS": npn_is,
             "NPN_N": npn_n
         }
-        path_to_AD590_template = exe_tools.adjust_path("netlists/AD590_template.cir")
+        path_to_AD590_template = AD590_NETLIST_TEMPLATE_PATH
         filled_in_netlist_str = process_file_with_replacements(path_to_AD590_template, d)
         write_string_to_file(temp_netlist_file_name, filled_in_netlist_str)
-        path_to_xyce_exe = exe_tools.adjust_path("xyce/Xyce.exe")
+        path_to_xyce_exe = XYCE_EXE_PATH
         cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_file_name)
@@ -139,9 +141,29 @@ def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, np
         os.remove(netlist_tempfile.name)
         os.remove(xyce_output_tempfile.name)
 
+def all_data_points_fluences_vs_current_AD590_parrallel(desired_voltage):
+    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
+    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
+    npn_df = pd.read_csv(npn_path)
+    pnp_df = pd.read_csv(pnp_path)
 
-def all_data_points_fluences_vs_current(desired_voltage):
-    import pandas as pd
+    def process_row(row_npn, row_pnp, desired_voltage):
+        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
+        current = generate_single_current_value_AD590(
+            pnp_is=row_pnp['Is'],
+            pnp_n=row_pnp['n'],
+            npn_is=row_npn['Is'],
+            npn_n=row_npn['n'],
+            desired_voltage=desired_voltage
+        )
+        return (avg_fluences, current)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        tasks_args = [(row_npn, row_pnp, desired_voltage) for (_, row_npn), (_, row_pnp) in zip (npn_df.iterrows(), pnp_df.iterrows())]
+        results = list(executor.map(lambda args: process_row(*args), tasks_args))
+        return results
+
+def all_data_points_fluences_vs_current_AD590_serial(desired_voltage):
     npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
     pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
     npn_df = pd.read_csv(npn_path)
@@ -149,7 +171,7 @@ def all_data_points_fluences_vs_current(desired_voltage):
 
     for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
         avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
-        current = generate_single_current_value(
+        current = generate_single_current_value_AD590(
             pnp_is=data_pnp['Is'],
             pnp_n=data_pnp['n'],
             npn_is=data_npn['Is'],
@@ -161,7 +183,7 @@ def all_data_points_fluences_vs_current(desired_voltage):
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
     ys = []
-    for fluences, current in all_data_points_fluences_vs_current(voltage):
+    for fluences, current in all_data_points_fluences_vs_current_AD590_parrallel(voltage):
         if fluences_min <= fluences <= fluences_max:
             xs.append(fluences)
             ys.append(current * 10 ** 6) # convert amps to micro amps
