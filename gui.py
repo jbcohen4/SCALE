@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-import serial_backend
+import backend
 import exe_tools
 
 INFINITY = float('inf') 
@@ -52,7 +52,7 @@ def draw_graph():
     Voltage = 5.0 if Voltage == "" else float(Voltage)
     Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
-    data = serial_backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
+    data = backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
