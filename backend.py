@@ -1,12 +1,15 @@
-
-import os
-import subprocess
+from typing import List, Tuple
+import exe_tools
 from pathlib import Path
-import concurrent.futures
-from typing import List
+import re, tempfile, os
 import pandas as pd
-import re # regex library
-from constants import *
+from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH
+import concurrent.futures
+
+
+
+inf = float('inf')
+
 
 class Err:
     def __init__(self, message):
@@ -21,9 +24,13 @@ def read_file_as_string(file_path):
         with open(file_path, 'r') as file:
             return file.read()
     except FileNotFoundError:
-        return Err("File not found.")
+        return Err(f"File not found: {file_path}")
 
-def format_string_with_dict(content: str, replacements_dict):
+def write_string_to_file(filename, string):
+    with open(filename, 'w') as file:
+        file.write(string)
+
+def format_string_with_dict(content: str, replacements_dict) -> str:
     """Replaces placeholders in the content with values from the replacements_dict.
     Returns the updated content or an error if a placeholder is not found in the dictionary."""
 
@@ -57,38 +64,19 @@ def process_file_with_replacements(file_path, replacements_dict):
 
     return updated_content_or_error
 
-def write_string_to_file(filename, string):
-    with open(filename, 'w') as file:
-        file.write(string)
-
-
-def delete_files_in_folder(folder_path):
-    # Check if the folder exists
-    if not os.path.exists(folder_path):
-        print(f"Folder '{folder_path}' not found.")
-        return
-
-    # Get a list of files in the folder
-    files_to_delete = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-
-    # Delete each file
-    for file_name in files_to_delete:
-        file_path = os.path.join(folder_path, file_name)
-        os.remove(file_path)
-        # print(f"Deleted file: {file_path}")
-
 def run_command(command):
     """Example usage:
     command = "echo Hello, world!"
     stdout, stderr, exit_code = run_command(command)
     """
+    import subprocess
     # Run the command and capture the output
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     # Return the standard output, standard error, and exit code from the command
     return result.stdout, result.stderr, result.returncode
 
-def parse_output_data(content: str):
+def parse_output_data(content: str) -> List[Tuple[float, float]]:
     """This takes the content of a file that xyce wrote to and returns a list of tuples of the numbers it gave
     Ex: if the content is
             V(2)             I(VOUT)     
@@ -119,91 +107,66 @@ def parse_output_data(content: str):
     return data_tuples
 
 
-def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, idx: int):
-    # Adjust the output file and template names based on the index
-    outfile = Path(get_output_path(idx))
-    temp_netlist_name = get_netlist_path(idx)
+def generate_single_current_value_AD590(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
+    """This function is threadsafe and will work in the executable"""
+    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    xyce_output_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        netlist_tempfile.close()
+        xyce_output_tempfile.close()
+        temp_netlist_file_name = netlist_tempfile.name
+        temp_xyce_output_file_name = xyce_output_tempfile.name
+        d = {
+            "output_filename": temp_xyce_output_file_name,
+            "PNP_IS": pnp_is,
+            "PNP_N": pnp_n,
+            "NPN_IS": npn_is,
+            "NPN_N": npn_n
+        }
+        path_to_AD590_template = AD590_NETLIST_TEMPLATE_PATH
+        filled_in_netlist_str = process_file_with_replacements(path_to_AD590_template, d)
+        write_string_to_file(temp_netlist_file_name, filled_in_netlist_str)
+        path_to_xyce_exe = XYCE_EXE_PATH
+        cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
+        stdout, stderr, return_code = run_command(cmd_string)
+        out_text = read_file_as_string(temp_xyce_output_file_name)
+        out_data = parse_output_data(out_text)
+        for voltage, current in out_data:
+            if voltage == desired_voltage:
+                return current
+        assert False
+    finally:
+        netlist_tempfile.close()
+        xyce_output_tempfile.close()
+        os.remove(netlist_tempfile.name)
+        os.remove(xyce_output_tempfile.name)
 
-    d = {
-        "output_filename": outfile,
-        "PNP_IS": pnp_is,
-        "PNP_N": pnp_n,
-        "NPN_IS": npn_is,
-        "NPN_N": npn_n
-    }
-    
-    processed_text = process_file_with_replacements(AD590_NETLIST_TEMPLATE, d)
-    write_string_to_file(temp_netlist_name, processed_text)
+def all_data_points_fluences_vs_current_AD590_parrallel(desired_voltage):
+    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
+    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
+    npn_df = pd.read_csv(npn_path)
+    pnp_df = pd.read_csv(pnp_path)
 
-
-def run_commands_in_parallel(command_template="xyce\\Xyce.exe {file_name}", num_files:int = 1):
-    def execute_command(file_name):
-        command = command_template.format(file_name=file_name)
-        subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Generate a list of file names based on the specified format
-    file_names = [f"tempfiles/netlists/netlist_{idx}.cir" for idx in range(num_files)]
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks for each file in the list
-        futures = [executor.submit(execute_command, file_name) for file_name in file_names]
-
-        # Wait for all tasks to complete
-        concurrent.futures.wait(futures)
-
-def find_current_for_desired_voltage(index_count, desired_voltage: float) -> List[float]:
-    # a serial function
-    result = []
-    for index in range(index_count): 
-        outfile = (f"tempfiles/xyce_output/xoutput_{index}.out")
-
-        try:
-            outtext = read_file_as_string(outfile)
-            out_data = parse_output_data(outtext)
-            
-            for voltage, current in out_data:
-                if voltage == desired_voltage:
-                    result.append(current)
-            
-        except Exception as e:
-            print(f"Error processing {outfile}: {str(e)}")
-    return result
-
-def all_data_points_fluences_vs_current(desired_voltage):
-    npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
-    pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
-    index_count = len(npn_df)
-    fluences = []
-    
-    # Clean the previous netlist files
-    netlist_folder_path = OUTPUT_DIR
-    delete_files_in_folder(netlist_folder_path)
-    xyce_output_folder_path = TEMP_NETLIST_DIR
-    delete_files_in_folder(xyce_output_folder_path)
-
-    # write the netlists serially
-    for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
-        avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
-        generate_netlist(
-            pnp_is=data_pnp['Is'],
-            pnp_n=data_pnp['n'],
-            npn_is=data_npn['Is'],
-            npn_n=data_npn['n'],
-            desired_voltage=desired_voltage,
-            idx=idx_npn
+    def process_row(row_npn, row_pnp, desired_voltage):
+        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
+        current = generate_single_current_value_AD590(
+            pnp_is=row_pnp['Is'],
+            pnp_n=row_pnp['n'],
+            npn_is=row_npn['Is'],
+            npn_n=row_npn['n'],
+            desired_voltage=desired_voltage
         )
-        fluences.append(avg_fluences)
-    
-    # calling the xyce to execute the netlist files
-    command_template = "xyce\\Xyce.exe {file_name}"
-    run_commands_in_parallel(command_template, index_count)
-        
-    currents = find_current_for_desired_voltage(index_count, desired_voltage)
-    return list(zip(fluences, currents))
+        return (avg_fluences, current)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        tasks_args = [(row_npn, row_pnp, desired_voltage) for (_, row_npn), (_, row_pnp) in zip (npn_df.iterrows(), pnp_df.iterrows())]
+        results = list(executor.map(lambda args: process_row(*args), tasks_args))
+        return results
 
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
     ys = []
-    for fluences, current in all_data_points_fluences_vs_current(voltage):
+    for fluences, current in all_data_points_fluences_vs_current_AD590_parrallel(voltage):
         if fluences_min <= fluences <= fluences_max:
             xs.append(fluences)
             ys.append(current * 10 ** 6) # convert amps to micro amps
@@ -212,6 +175,15 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
         'I_out (µA)': ys
     }
 
+def main():
+    data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
+    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    print(f"{x_axis_name}\t{y_axis_name}")
+    for i in range(5):
+        print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
+    pass
+
 if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
-    data = generate_data_for_AD590(5.0, -float('inf'), float('inf'))
-    print(len(data.items()))
+    main()
+
+
