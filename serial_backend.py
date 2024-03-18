@@ -15,7 +15,7 @@ def read_file_as_string(file_path):
     except FileNotFoundError:
         return Err("File not found.")
 
-def format_string_with_dict(content: str, replacements_dict):
+def format_string_with_dict(content: str, replacements_dict) -> str:
     """Replaces placeholders in the content with values from the replacements_dict.
     Returns the updated content or an error if a placeholder is not found in the dictionary."""
 

@@ -91,3 +91,36 @@ print("read pnp_df")
 print(pnp_df.head())
 ```
 
+
+
+I moved the read_csv_to_df function into a seperate file, and I added the ability to read the netlist
+```
+import making_exe, serial_backend
+from pathlib import Path
+
+print('version 6')
+npn_df = making_exe.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
+print("read npn_df")
+print(npn_df.head())
+pnp_df = making_exe.read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
+print("read pnp_df")
+print(pnp_df.head())
+
+outfile = Path("tempfiles/t1.out")
+
+d = {
+    "output_filename": outfile,
+    "PNP_IS": 1,
+    "PNP_N": 2,
+    "NPN_IS": 3,
+    "NPN_N": 4
+}
+
+processed_text = serial_backend.process_file_with_replacements("netlists/AD590_template.cir", d)
+
+print('processed text:----------------------------------')
+print(processed_text)
+```
+This worked!
+
+
