@@ -163,23 +163,6 @@ def all_data_points_fluences_vs_current_AD590_parrallel(desired_voltage):
         results = list(executor.map(lambda args: process_row(*args), tasks_args))
         return results
 
-def all_data_points_fluences_vs_current_AD590_serial(desired_voltage):
-    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
-    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
-    npn_df = pd.read_csv(npn_path)
-    pnp_df = pd.read_csv(pnp_path)
-
-    for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
-        avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
-        current = generate_single_current_value_AD590(
-            pnp_is=data_pnp['Is'],
-            pnp_n=data_pnp['n'],
-            npn_is=data_npn['Is'],
-            npn_n=data_npn['n'],
-            desired_voltage=desired_voltage
-        )
-        yield (avg_fluences, current)
-
 def generate_data_for_AD590(voltage, fluences_min, fluences_max):
     xs = []
     ys = []
