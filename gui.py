@@ -6,9 +6,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
 import csv
-import serial_backend
 import backend
-import dummy
+import serial_backend
 import exe_tools
 
 INFINITY = float('inf') 
@@ -56,9 +55,9 @@ def draw_graph():
     Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
     if exe_tools.curr_mode() == exe_tools.PYTHON_MODE:
-        data = dummy.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max) # todo: make this use the backend
+        data = serial_backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max) # todo: change this back to using the parallel backend
     elif exe_tools.curr_mode() == exe_tools.EXE_MODE:
-        data = dummy.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
+        data = serial_backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
     else:
         assert False
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()

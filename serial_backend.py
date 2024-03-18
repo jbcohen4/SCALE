@@ -1,3 +1,10 @@
+from typing import List, Tuple
+import exe_tools
+from pathlib import Path
+
+import tempfile, os
+
+
 inf = float('inf')
 
 class Err:
@@ -13,7 +20,11 @@ def read_file_as_string(file_path):
         with open(file_path, 'r') as file:
             return file.read()
     except FileNotFoundError:
-        return Err("File not found.")
+        return Err(f"File not found: {file_path}")
+
+def write_string_to_file(filename, string):
+    with open(filename, 'w') as file:
+        file.write(string)
 
 def format_string_with_dict(content: str, replacements_dict) -> str:
     """Replaces placeholders in the content with values from the replacements_dict.
@@ -51,10 +62,6 @@ def process_file_with_replacements(file_path, replacements_dict):
 
     return updated_content_or_error
 
-def write_string_to_file(filename, string):
-    with open(filename, 'w') as file:
-        file.write(string)
-
 def run_command(command):
     """Example usage:
     command = "echo Hello, world!"
@@ -67,7 +74,7 @@ def run_command(command):
     # Return the standard output, standard error, and exit code from the command
     return result.stdout, result.stderr, result.returncode
 
-def parse_output_data(content: str):
+def parse_output_data(content: str) -> List[Tuple[float, float]]:
     """This takes the content of a file that xyce wrote to and returns a list of tuples of the numbers it gave
     Ex: if the content is
             V(2)             I(VOUT)     
@@ -100,38 +107,45 @@ def parse_output_data(content: str):
 
 
 def generate_single_current_value(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float) -> float:
-    from pathlib import Path
-
-    outfile = Path("tempfiles/t1.out")
-
-    d = {
-        "output_filename": outfile,
-        "PNP_IS": pnp_is,
-        "PNP_N": pnp_n,
-        "NPN_IS": npn_is,
-        "NPN_N": npn_n
-    }
-
-    processed_text = process_file_with_replacements("netlists/AD590_template.cir", d)
-
-    temp_netlist_name = "tempfiles/netlist.cir"
-
-    write_string_to_file(temp_netlist_name, processed_text)
-
-    run_command(f"xyce\\Xyce.exe {temp_netlist_name}")
-
-    outtext = read_file_as_string(outfile)
-    out_data = parse_output_data(outtext)
-    for voltage, current in out_data:
-        if voltage == desired_voltage:
-            return current
-    assert False
+    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    xyce_output_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        netlist_tempfile.close()
+        xyce_output_tempfile.close()
+        temp_netlist_file_name = netlist_tempfile.name
+        temp_xyce_output_file_name = xyce_output_tempfile.name
+        d = {
+            "output_filename": temp_xyce_output_file_name,
+            "PNP_IS": pnp_is,
+            "PNP_N": pnp_n,
+            "NPN_IS": npn_is,
+            "NPN_N": npn_n
+        }
+        path_to_AD590_template = exe_tools.adjust_path("netlists/AD590_template.cir")
+        filled_in_netlist_str = process_file_with_replacements(path_to_AD590_template, d)
+        write_string_to_file(temp_netlist_file_name, filled_in_netlist_str)
+        path_to_xyce_exe = exe_tools.adjust_path("xyce/Xyce.exe")
+        cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
+        stdout, stderr, return_code = run_command(cmd_string)
+        out_text = read_file_as_string(temp_xyce_output_file_name)
+        out_data = parse_output_data(out_text)
+        for voltage, current in out_data:
+            if voltage == desired_voltage:
+                return current
+        assert False
+    finally:
+        netlist_tempfile.close()
+        xyce_output_tempfile.close()
+        os.remove(netlist_tempfile.name)
+        os.remove(xyce_output_tempfile.name)
 
 
 def all_data_points_fluences_vs_current(desired_voltage):
     import pandas as pd
-    npn_df = pd.read_excel('excel-files/NPN_diode_parameters_V0.xlsx')
-    pnp_df = pd.read_excel('excel-files/PNP_diode_parameters_V0.xlsx')
+    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
+    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
+    npn_df = pd.read_csv(npn_path)
+    pnp_df = pd.read_csv(pnp_path)
 
     for (idx_npn, data_npn), (idx_pnp, data_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
         avg_fluences = (data_npn['fluences (n/cm^2)'] + data_pnp['fluences (n/cm^2)']) / 2
@@ -156,10 +170,15 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
         'I_out (µA)': ys
     }
 
-if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+def main():
     data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     print(f"{x_axis_name}\t{y_axis_name}")
     for i in range(5):
         print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
     pass
+
+if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+    main()
+
+

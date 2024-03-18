@@ -132,7 +132,7 @@ def generate_netlist(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, d
         "NPN_N": npn_n
     }
     
-    processed_text = process_file_with_replacements(AD590_NETLIST_TEMPLATE, d)
+    processed_text = process_file_with_replacements(AD590_NETLIST_TEMPLATE, d) # todo: this will have to use an adjusted path
     write_string_to_file(temp_netlist_name, processed_text)
 
 

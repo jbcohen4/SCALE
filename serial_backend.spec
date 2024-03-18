@@ -5,10 +5,7 @@ a = Analysis(
     ['serial_backend.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ("excel-files/NPN_diode_parameters_V0.xlsx", "excel-files"),
-        ("excel-files/PNP_diode_parameters_V0.xlsx", "excel-files"),
-    ],
+    datas=[('csvs/*', 'csvs'), ('netlists/AD590_template.cir', 'netlists'), ('xyce/*', 'xyce')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -37,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    onefile=True,# makes it so pyinstaller knows you want a single dependency free .exe
+    onefile=True,
 )
