@@ -175,6 +175,10 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
         'I_out (µA)': ys
     }
 
+# Function to return the data to GUI 
+def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
+    pass
+
 def main():
     data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
