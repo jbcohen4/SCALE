@@ -164,7 +164,7 @@ button_width = 10
 button_height = 1
 
 #Buttons
-execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height)
+execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, background="pale green")
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
 change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height,background="sienna1", activebackground="white")
