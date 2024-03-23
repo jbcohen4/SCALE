@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
-import csv, os, sys
+import backend
+import exe_tools
+
+INFINITY = float('inf') 
 
 # Create Window for GUI
 root = tk.Tk()
@@ -36,43 +39,33 @@ def validate_numerical(value):
     except ValueError:
         return False
 
-# Execute function
-def execute_function(sample_data):
-    if getattr(sys, 'frozen', False): # check if the application has been bundled with PyInstaller (ask ChatGPT to explain this line, it's a bit counterintuitive)
-        # If the application is run by PyInstaller, you need to use the sys._MEIPASS thing
-        base_path = sys._MEIPASS
-    else:
-        # If the application is run from a script, the CSV file is in the current directory
-        base_path = os.path.dirname(__file__)
 
-    csv_file_path = os.path.join(base_path, 'output/fluences-vs-temp.csv')
-    with open(csv_file_path, 'r') as file:
-        csv_reader = csv.reader(file)
-        header_row = next(csv_reader)
+
+def draw_graph():
+    # get data from user
+    Voltage = textbox_dataset_vcc.get()
+    # Temperature = textbox_temp.get() # at the moment, the backend can't use this
+    Fluence_Min = textbox_fluences_min.get()
+    Fluence_Max = textbox_fluences_max.get()
     
-        xs_column_name = header_row[0]
-        ys_column_name = header_row[1]
+    # validate data and put in default values as needed
+    Voltage = 5.0 if Voltage == "" else float(Voltage)
+    Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
+    Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
+    data = backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
+    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    xs = np.array(x_axis_data)
+    ys = np.array(y_axis_data)
 
-        for row in csv_reader:
-            xs_value = float(row[0])
-            ys_value = float(row[1])
-
-            sample_data['xs'].append(xs_value)
-            sample_data['ys'].append(ys_value)
-
-    # Frame 4 for graph
     graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
-
-    # Plotting the line chart
-    xs = np.array(sample_data['xs'])
-    ys = np.array(sample_data['ys'])
+    Chart_title = "Line Chart"
 
     fig, ax = plt.subplots()
     ax.plot(xs, ys)
-    ax.set_xlabel(xs_column_name)
-    ax.set_xscale('log')
-    ax.set_ylabel(ys_column_name)
-    ax.set_title("Line Chart")
+    ax.set_xscale('log') # Set the x-axis to log scale
+    ax.set_xlabel(x_axis_name)
+    ax.set_ylabel(y_axis_name)
+    ax.set_title(Chart_title)
     plt.subplots_adjust(left=0.2)
 
     # Embedding the plot in the Tkinter window
@@ -81,12 +74,21 @@ def execute_function(sample_data):
     canvas_widget.grid(row=0, column=0, sticky="nsew")
     graph_frame.update_idletasks()
 
+
+
 # Clear function 
 def clear_function():
+    textbox_dataset_vcc.delete(0, tk.END)
     textbox_temp.delete(0, tk.END)
     textbox_fluences_min.delete(0, tk.END)
     textbox_fluences_max.delete(0, tk.END)
     print("Clear all the fields")
+
+    # Find and destroy the existing graph frame
+    for widget in root.winfo_children():
+        if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+            widget.destroy()
+
 
 # Frame 1
 frame1 = create_frame(0, 0, "", width=2, height=2)
@@ -106,7 +108,7 @@ label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, 
 label_Specifications.grid(row=1, column=0, sticky="e")
 
 # Dropdown Specifications
-options_specifications = ["Vref", "SPECIFICATION 01", "SPECIFICATION 02"]
+options_specifications = ["I_out", "SPECIFICATION 01", "SPECIFICATION 02"]
 var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
@@ -119,7 +121,7 @@ label_dataset.grid(row=2, column=0, sticky="we")
 label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold")
 label_dataset_vcc.grid(row=3, column=0, sticky="e")
 
-# Themed Entry for Dataset with border and padding
+# Text Entry for Dataset with border and padding
 validate_dataset_vcc = (root.register(validate_numerical), '%P')
 textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc)
 textbox_dataset_vcc.grid(row=3, column=1, sticky="w")
@@ -130,26 +132,30 @@ frame2 = create_frame(0, 2, "", width=2, height=2)
 label_temp = tk.Label(frame2, text="Temperature (C):", padx=5, pady=5, font="Arial 9 bold")
 label_temp.grid(row=0, column=0, sticky="e")
 
-# Themed Entry for Temperature with border and padding
+# Text Entry for Temperature with border and padding
 validate_temp = (root.register(validate_numerical), '%P')
 textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp)
 textbox_temp.grid(row=0, column=1, sticky="w")
 
-label_fluences_min = tk.Label(frame2, text="Fluences Min(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
-# Themed Entry for Fluences Min with border and padding
+# Text Entry for Fluences Min with border and padding
 validate_fluences_min = (root.register(validate_numerical), '%P')
 textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min)
 textbox_fluences_min.grid(row=1, column=1, sticky="w")
+label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range1.grid(row=1, column=2, sticky="e")
 
-label_fluences_max = tk.Label(frame2, text="Fluences Max(K):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
-# Themed Entry for Fluences Max with border and padding
+# Text Entry for Fluences Max with border and padding
 validate_fluences_max = (root.register(validate_numerical), '%P')
 textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max)
 textbox_fluences_max.grid(row=2, column=1, sticky="w")
+label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range2.grid(row=2, column=2, sticky="e")
 
 # Frame 3
 frame3 = create_frame(0, 4, "", width=4)
@@ -157,11 +163,8 @@ frame3 = create_frame(0, 4, "", width=4)
 button_width = 10
 button_height = 1
 
-# Sample data
-sample_data = {'xs': [], 'ys': []}
-
 #Buttons
-execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_function(sample_data), width=button_width, height=button_height,background="pale green", activebackground="white")
+execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height)
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
 change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height,background="sienna1", activebackground="white")
@@ -181,7 +184,6 @@ def on_closing():
     root.destroy()  # Destroy the Tkinter window
 
 root.protocol("WM_DELETE_WINDOW", on_closing) # set the 'on_closing()' function to be called when you exit the program
-
 
 # Running the window
 root.mainloop()
