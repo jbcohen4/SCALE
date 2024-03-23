@@ -17,7 +17,7 @@ root.title("Radiation on BJT explorer")
 root.geometry("800x750")
 
 # Set the background color of the root window
-root.configure(bg="darkgray")
+root.configure(bg="LightBlue2")
 
 # Adding frames for parts and specifications
 def create_frame(row, column, text, width=2, height=2):
@@ -100,6 +100,7 @@ var1 = StringVar()
 var1.set(options_part[0])
 dropdown_part = OptionMenu(frame1, var1, *options_part)
 dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+dropdown_part.config(bg="white")
 
 label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold")
 label_Specifications.grid(row=1, column=0, sticky="e")
@@ -110,6 +111,7 @@ var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
 dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+dropdown_specifications.config(bg="white")
 
 label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold")
 label_dataset.grid(row=2, column=0, sticky="we")
@@ -159,16 +161,16 @@ button_height = 1
 sample_data = {'xs': [], 'ys': []}
 
 #Buttons
-execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_function(sample_data), width=button_width, height=button_height)
+execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_function(sample_data), width=button_width, height=button_height,background="pale green", activebackground="white")
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
-change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height)
+change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height,background="sienna1", activebackground="white")
 change_scale_button.grid(row=2, column=1, padx=5, pady=5)
 
-save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height)
+save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height,background="light sky blue", activebackground="white")
 save_button.grid(row=3, column=1, padx=5, pady=5)
 
-clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height)
+clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height,background="indian red", activebackground="white")
 clear_button.grid(row=4, column=1, padx=5, pady=5)
 
 
