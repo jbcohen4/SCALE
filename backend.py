@@ -175,6 +175,7 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
         'I_out (µA)': ys
     }
 
+
 def generate_voltage_value_LM741(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, testbench_path: Path) -> float:
     """This function is threadsafe and will work in the executable"""
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
@@ -300,6 +301,10 @@ def generate_data_for_LM741(voltage: float, fluences_min, fluences_max, specific
         specification: ys
     }
 
+
+# Function to return the data to GUI 
+def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
+    pass
 
 def main():
     # data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
