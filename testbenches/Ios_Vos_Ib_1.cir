@@ -21,6 +21,6 @@ RR1 2 3 10Meg
 .dc VCC 0 30 1
 
 *Output
-.print dc format=noindex file=LM741_Ios_Ib_Vos_output1.txt
+.print dc format=noindex file={output_filename}
 + V(8)
 + V(3)
