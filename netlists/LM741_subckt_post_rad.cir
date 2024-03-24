@@ -1,0 +1,128 @@
+*Subcircuit name: LM741 Vcc Vee NonInvInput InvInput Output
+**************************
+.subckt LM741 26 22 27 28 25
+
+*Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
+**********************************
+*PNP
+D3 6 8 DMODPNP 0.954 temp=25
+D4 7 8 DMODPNP 0.934 temp=25
+D8 26 1 DMODPNP 1.215 temp=25
+D9 26 1 DMODPNP 1.215 temp=25
+D12 26 2 DMODPNP 1.666 temp=25
+D13 26 2 DMODPNP 1 temp=25
+D20 21 9 DMODPNP 2.6 temp=25
+
+*NPN
+D1 27 6 DMODNPN 1.068 temp=25
+D2 28 7 DMODNPN 0.971 temp=25
+D5 23 31 DMODNPN 0.971 temp=25
+D6 23 32 DMODNPN 0.971 temp=25
+D7 10 23 DMODNPN 0.971 temp=25
+D10 12 24 DMODNPN 1.373 temp=25
+D11 12 22 DMODNPN 3.824 temp=25
+D14 3 20 DMODNPN 3.706 temp=25
+D15 20 25 DMODNPN 4.114 temp=25
+D16 11 13 DMODNPN 0.971 temp=25
+D17 13 16 DMODNPN 0.869 temp=25
+D18 4 9 DMODNPN 1.384 temp=25
+D22 16 22 DMODNPN 1.188 temp=25
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+Q3 10 8 6 LPNP_COMPACT 0.954 temp=25
+Q4 11 8 7 LPNP_COMPACT 0.934 temp=25
+Q8 1 1 26 LPNP_COMPACT 1.215 temp=25
+Q9 8 1 26 LPNP_COMPACT 1.215 temp=25
+Q12 2 2 26 LPNP_COMPACT 1.666 temp=25
+Q13 3 2 26 LPNP_COMPACT 1 temp=25
+Q20 22 9 21 LPNP_COMPACT 2.600 temp=25
+
+
+
+Q1 1 27 6 NPN_COMPACT 1.068 temp=25
+Q2 1 28 7 NPN_COMPACT 0.971 temp=25
+Q5 10 23 31 NPN_COMPACT 0.971 temp=25
+Q6 11 23 32 NPN_COMPACT 0.971 temp=25
+Q7 26 10 23 NPN_COMPACT 0.971 temp=25
+Q10 8 12 24 NPN_COMPACT 1.373 temp=25
+Q11 12 12 22 NPN_COMPACT 3.824 temp=25
+Q14 26 3 20 NPN_COMPACT 3.706 temp=25
+Q15 3 20 25 NPN_COMPACT 4.114 temp=25
+Q16 9 11 13 NPN_COMPACT 0.971 temp=25
+Q17 9 13 16 NPN_COMPACT 0.869 temp=25
+Q18 3 4 9 NPN_COMPACT 1.384 temp=25
+Q22 11 16 22 NPN_COMPACT 1.188 temp=25
+
+*Capacitance: C<name> <+ node> <- node> [model name] <value> + [IC=<initial value>]
+c1 3 11 30p
+
+*Resistance: R<name> <+ node> <- node> [model name] <value>
+R1 31 22 1K
+R2 32 22 1K
+R3 23 22 50K
+R4 24 22 5K
+R5 2 12 39K
+R7 3 4 4.5K
+R8 4 9 7.5k
+R9 20 25 25
+R10 25 21 50
+R11 16 22 50
+R12 13 22 50k
+
+*end of the subcircuit 
+.ends
+
+*****// from LM111 not LM741
+*Library
+.MODEL LPNP_COMPACT PNP (
++IS=7.40964E-16
++BF=90.9
++NF=0.99         
++VAF=36.3423711
++IKF=1.30957E-4  
++NK=0.52
++ISE=6E-16
++NE=1.27089 
++BR=0.697 
++NR=2
++VAR=100  
++IKR=0.1 
++ISC=1E-17
++ NC=2    
++RB=758.578   
++IRB=3.6E-5
++ RBM=100    
++RE=4.096  
++RC=1)
+
+
+
+.MODEL  NPN_COMPACT NPN(               
++IS=2.354912E-16
++BF=84.058
++NF=0.986787     
++VAF=351.9861415
++IKF=9.86E-3
++NK=0.47574  
++ISE=7.1029E-15
++NE=2.06453  
++BR=0.697       
++NR=2
++VAR=100
++IKR=0.1         
++ISC=1E-17
++NC=2                          
++RB=140.86       
++IRB=1E-3 
++RBM=50                        
++RE=2           
++RC=250.75)
+
+.model DMODPNP D (IS ={PNP_IS}
++ N = {PNP_N})
+
+.model DMODNPN D (IS = {NPN_IS}
++ N = {NPN_N})
+
+*end of the netlist
+.end
