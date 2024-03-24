@@ -129,7 +129,9 @@ def generate_single_current_value_AD590(pnp_is: float, pnp_n: float, npn_is: flo
         path_to_xyce_exe = XYCE_EXE_PATH
         cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
         stdout, stderr, return_code = run_command(cmd_string)
+        print(temp_xyce_output_file_name)
         out_text = read_file_as_string(temp_xyce_output_file_name)
+        print(out_text)
         out_data = parse_output_data(out_text)
         for voltage, current in out_data:
             if voltage == desired_voltage:
@@ -175,17 +177,6 @@ def generate_data_for_AD590(voltage, fluences_min, fluences_max):
         'I_out (µA)': ys
     }
 
-def extract_lm741_subcircuit(filled_in_netlist_str: str) -> str:
-    # Find the start and end of the subcircuit part in the filled-in netlist
-    start_marker = "*Subcircuit name: LM741"
-    end_marker = "*end of the subcircuit"
-    start_index = filled_in_netlist_str.find(start_marker)
-    end_index = filled_in_netlist_str.find(end_marker, start_index)
-    
-    # Extract the subcircuit part
-    subcircuit_content = filled_in_netlist_str[start_index:end_index + len(end_marker)]
-    
-    return subcircuit_content
 
 def generate_single_current_value_LM741(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float, testbench_path: Path) -> float:
     """This function is threadsafe and will work in the executable"""
@@ -207,9 +198,7 @@ def generate_single_current_value_LM741(pnp_is: float, pnp_n: float, npn_is: flo
         filled_in_netlist_str = process_file_with_replacements(path_to_LM741_template, d)
         with open(testbench_path, 'r') as testbench_file:
             testbench_content = testbench_file.read()
-            lm741_subcircuit_content = extract_lm741_subcircuit(filled_in_netlist_str)
-            testbench_content += '\n' + lm741_subcircuit_content
-        print(testbench_content)
+            testbench_content += '\n' + filled_in_netlist_str
         write_string_to_file(temp_netlist_file_name, testbench_content)
         path_to_xyce_exe = XYCE_EXE_PATH
         cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
@@ -217,6 +206,7 @@ def generate_single_current_value_LM741(pnp_is: float, pnp_n: float, npn_is: flo
         out_text = read_file_as_string(temp_xyce_output_file_name)
         print(out_text)
         out_data = parse_output_data(out_text)
+        
         for voltage, current in out_data:
             if voltage == desired_voltage:
                 return current
@@ -227,7 +217,7 @@ def generate_single_current_value_LM741(pnp_is: float, pnp_n: float, npn_is: flo
         os.remove(netlist_tempfile.name)
         os.remove(xyce_output_tempfile.name)
 
-def all_data_points_fluences_vs_current_LM741_parrallel(desired_voltage, testbench_path):
+def all_data_points_fluences_vs_current_LM741_parrallel(desired_voltage):
     npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
     pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
     npn_df = pd.read_csv(npn_path)
@@ -235,16 +225,32 @@ def all_data_points_fluences_vs_current_LM741_parrallel(desired_voltage, testben
 
     def process_row(row_npn, row_pnp, desired_voltage):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
-        current = generate_single_current_value_LM741(
+        current1 = generate_single_current_value_LM741(
             pnp_is=row_pnp['Is'],
             pnp_n=row_pnp['n'],
             npn_is=row_npn['Is'],
             npn_n=row_npn['n'],
             desired_voltage=desired_voltage,
-            testbench_path = testbench_path
+            testbench_path = IOS_VOS_IB_1_PATH
         )
-        return (avg_fluences, current)
-
+        # current2 = generate_single_current_value_LM741(
+        #     pnp_is=row_pnp['Is'],
+        #     pnp_n=row_pnp['n'],
+        #     npn_is=row_npn['Is'],
+        #     npn_n=row_npn['n'],
+        #     desired_voltage=desired_voltage,
+        #     testbench_path = IOS_VOS_IB_2_PATH
+        # )
+        # current3 = generate_single_current_value_LM741(
+        #     pnp_is=row_pnp['Is'],
+        #     pnp_n=row_pnp['n'],
+        #     npn_is=row_npn['Is'],
+        #     npn_n=row_npn['n'],
+        #     desired_voltage=desired_voltage,
+        #     testbench_path = IOS_VOS_IB_3_PATH
+        # # )
+        # return (avg_fluences, zip(current1,current2,current3))
+        return (avg_fluences, current1)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         tasks_args = [(row_npn, row_pnp, desired_voltage) for (_, row_npn), (_, row_pnp) in zip (npn_df.iterrows(), pnp_df.iterrows())]
         results = list(executor.map(lambda args: process_row(*args), tasks_args))
@@ -253,7 +259,7 @@ def all_data_points_fluences_vs_current_LM741_parrallel(desired_voltage, testben
 def generate_data_for_LM741(voltage, fluences_min, fluences_max):
     xs = []
     ys = []
-    for fluences, current in all_data_points_fluences_vs_current_LM741_parrallel(voltage,IOS_VOS_IB_1_PATH):
+    for fluences, current in all_data_points_fluences_vs_current_LM741_parrallel(voltage):
         if fluences_min <= fluences <= fluences_max:
             xs.append(fluences)
             ys.append(current * 10 ** 6) # convert amps to micro amps
@@ -264,8 +270,14 @@ def generate_data_for_LM741(voltage, fluences_min, fluences_max):
 
 
 def main():
-    # data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
-    data = generate_data_for_LM741(voltage=5.0, fluences_min=-inf, fluences_max=inf)
+    #data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
+    # (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    # print(f"{x_axis_name}\t{y_axis_name}")
+    # for i in range(5):
+    #     print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
+    # pass
+
+    data = generate_data_for_LM741(voltage=15.0, fluences_min=-inf, fluences_max=inf)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     print(f"{x_axis_name}\t{y_axis_name}")
     for i in range(5):
