@@ -22,7 +22,9 @@ root.title("Radiation on BJT explorer")
 root.geometry("800x750")
 
 # Set the background color of the root window
+
 root.configure(bg="cadetBlue4")
+
 
 # Adding frames for parts and specifications
 def create_frame(row, column, text, width=2, height=2):
@@ -107,6 +109,7 @@ var1 = StringVar()
 var1.set(options_part[0])
 dropdown_part = OptionMenu(frame1, var1, *options_part)
 dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+dropdown_part.config(bg="white")
 
 label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold")
 label_Specifications.grid(row=1, column=0, sticky="e")
@@ -118,6 +121,7 @@ var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
 dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+dropdown_specifications.config(bg="white")
 
 # Function to update Specifications Dropdown based on Part Dropdown selection
 def update_dropdown_specifications(*args):
@@ -186,6 +190,7 @@ button_border_color = "black"
 button_border_width = 2
 
 #Buttons
+
 execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
@@ -194,6 +199,7 @@ save_button.grid(row=1, column=1, padx=5, pady=5)
 
 clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
 clear_button.grid(row=2, column=1, padx=5, pady=5)
+
 
 
 def on_closing():
