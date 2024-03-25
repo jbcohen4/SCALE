@@ -87,7 +87,8 @@ def parse_output_data(content: str) -> List[Tuple[float, float]]:
                 3.00000000e+01    3.00012198e-04
             End of Xyce(TM) Simulation
         
-        then this function will return[
+    then this function will return
+        [
             (0.0, 7.88778843e-25),
             (1.0, 9.66696441e-06),
                     ...
