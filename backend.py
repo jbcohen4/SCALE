@@ -6,6 +6,7 @@ import pandas as pd
 from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, NPN_DF, PNP_DF
 import concurrent.futures
 import numpy as np
+from functools import lru_cache
 
 
 inf = float('inf')
@@ -201,7 +202,6 @@ def generate_voltage_value_LM741(pnp_is: float, pnp_n: float, npn_is: float, npn
         cmd_string = f"{path_to_xyce_exe} {temp_netlist_file_name}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_file_name)
-        # breakpoint()
         out_data = parse_output_data(out_text)
         #v8 and v3 are the left and right columns of the xyce output
         for v8, v3 in out_data:
@@ -252,7 +252,10 @@ def matrix_math_LM741(vO1: float, vO2: float, vO3: float):
 
     return vos_Iib_Ios
 
+@lru_cache # when you call this function a 2nd time with the same voltage, it will be MUCH faster
+# This is likely to happen, since the user might want to see the graphs for the 3 values (V_os, I_ib, I_os) for the same voltage
 def all_data_points_fluences_vs_Vos_Ib_Ios_LM741(desired_voltage):
+    result = []
     for (idx_npn, row_npn),(idx_pnp, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows()):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
         vO1, vO2, vO3 = generate_3_voltages_LM741(
@@ -264,12 +267,13 @@ def all_data_points_fluences_vs_Vos_Ib_Ios_LM741(desired_voltage):
         )
 
         vos,Iib,Ios = matrix_math_LM741(vO1,vO2,vO3)
-        yield {
+        result.append({
             'fluences': avg_fluences,
             'V_os': vos,
             'I_b': Iib,
             'I_os': Ios
-        }
+        })
+    return result
 
 def generate_data_for_LM741(voltage: float, fluences_min, fluences_max, specification: str):
     xs = []
