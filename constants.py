@@ -9,3 +9,10 @@ LM741_NETLIST_PATH = exe_tools.adjust_path("netlists/LM741_subckt_post_rad.cir")
 IOS_VOS_IB_1_PATH = exe_tools.adjust_path(r"testbenches\Ios_Vos_Ib_1.cir")
 IOS_VOS_IB_2_PATH = exe_tools.adjust_path(r"testbenches\Ios_Vos_Ib_2.cir")
 IOS_VOS_IB_3_PATH = exe_tools.adjust_path(r"testbenches\Ios_Vos_Ib_3.cir")
+
+# Object to Store the mapping of the Part and Specifications Dropdown
+DROPDOWN_MAPPING = {
+    "AD590": ["I_out"],
+    "LM741": ["V_os", "I_b", "I_os"]
+
+}

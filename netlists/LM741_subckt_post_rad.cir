@@ -118,11 +118,11 @@ R12 13 22 50k
 +RE=2           
 +RC=250.75)
 
-.model DMODPNP D (IS = {PNP_IS}
+.model DMODPNP D (IS ={PNP_IS}
 + N = {PNP_N})
 
 .model DMODNPN D (IS = {NPN_IS}
-+ N ={NPN_N} )
++ N = {NPN_N})
 
 *end of the netlist
 .end

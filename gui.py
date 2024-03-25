@@ -8,7 +8,9 @@ import numpy as np
 import backend
 import exe_tools
 
+from constants import DROPDOWN_MAPPING
 INFINITY = float('inf') 
+
 
 # Create Window for GUI
 root = tk.Tk()
@@ -20,7 +22,9 @@ root.title("Radiation on BJT explorer")
 root.geometry("800x750")
 
 # Set the background color of the root window
-root.configure(bg="LightBlue2")
+
+root.configure(bg="cadetBlue4")
+
 
 # Adding frames for parts and specifications
 def create_frame(row, column, text, width=2, height=2):
@@ -43,8 +47,10 @@ def validate_numerical(value):
 
 def draw_graph():
     # get data from user
+    Selected_Part = var1.get()
+    Selected_Specification = var2.get()
     Voltage = textbox_dataset_vcc.get()
-    # Temperature = textbox_temp.get() # at the moment, the backend can't use this
+    Temperature = textbox_temp.get() # at the moment, the backend can't use this
     Fluence_Min = textbox_fluences_min.get()
     Fluence_Max = textbox_fluences_max.get()
     
@@ -57,6 +63,9 @@ def draw_graph():
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
 
+    # data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
+    # print(data)
+    
     graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
     Chart_title = "Line Chart"
 
@@ -73,8 +82,6 @@ def draw_graph():
     canvas_widget = canvas.get_tk_widget()
     canvas_widget.grid(row=0, column=0, sticky="nsew")
     graph_frame.update_idletasks()
-
-
 
 # Clear function 
 def clear_function():
@@ -97,7 +104,7 @@ label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bol
 label_Parts.grid(row=0, column=0, sticky="e")
 
 # Dropdown Parts
-options_part = ["AD590", "TL431", "TEMP0"]
+options_part = list(DROPDOWN_MAPPING.keys())
 var1 = StringVar()
 var1.set(options_part[0])
 dropdown_part = OptionMenu(frame1, var1, *options_part)
@@ -108,12 +115,25 @@ label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, 
 label_Specifications.grid(row=1, column=0, sticky="e")
 
 # Dropdown Specifications
-options_specifications = ["I_out", "SPECIFICATION 01", "SPECIFICATION 02"]
+selected_part = options_part[0]
+options_specifications = DROPDOWN_MAPPING[selected_part]
 var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
 dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
 dropdown_specifications.config(bg="white")
+
+# Function to update Specifications Dropdown based on Part Dropdown selection
+def update_dropdown_specifications(*args):
+    selected_part = var1.get()
+    options_specifications = DROPDOWN_MAPPING[selected_part]
+    dropdown_specifications['menu'].delete(0, 'end') 
+    for spec in options_specifications:
+        dropdown_specifications['menu'].add_command(label=spec, command=tk._setit(var2, spec))
+    var2.set(options_specifications[0])  # Set default value for var2
+
+# Trace changes in Dropdown 1 and update Dropdown 2 accordingly
+var1.trace_add('write', update_dropdown_specifications)
 
 label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold")
 label_dataset.grid(row=2, column=0, sticky="we")
@@ -163,22 +183,27 @@ frame3 = create_frame(0, 4, "", width=4)
 button_width = 10
 button_height = 1
 
+# Button Design
+button_bg_color = "lightgray"
+button_fg_color = "black"
+button_border_color = "black"
+button_border_width = 2
+
 #Buttons
-execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, background="pale green")
+
+execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
-change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height,background="sienna1", activebackground="white")
-change_scale_button.grid(row=2, column=1, padx=5, pady=5)
+save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
+save_button.grid(row=1, column=1, padx=5, pady=5)
 
-save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height,background="light sky blue", activebackground="white")
-save_button.grid(row=3, column=1, padx=5, pady=5)
+clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
+clear_button.grid(row=2, column=1, padx=5, pady=5)
 
-clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height,background="indian red", activebackground="white")
-clear_button.grid(row=4, column=1, padx=5, pady=5)
 
 
 def on_closing():
-    """I was having issues with the application not closing all th way when I pressed the X button on the GUI.
+    """I was having issues with the application not closing all the way when I pressed the X button on the GUI.
     This function fixed that."""
     plt.close('all')  # Close all Matplotlib figures
     root.destroy()  # Destroy the Tkinter window
