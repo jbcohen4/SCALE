@@ -3,7 +3,7 @@ import exe_tools
 from pathlib import Path
 import re, tempfile, os
 import pandas as pd
-from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH
+from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, NPN_DF, PNP_DF
 import concurrent.futures
 import numpy as np
 
@@ -142,11 +142,6 @@ def generate_single_current_value_AD590(pnp_is: float, pnp_n: float, npn_is: flo
         os.remove(xyce_output_tempfile.name)
 
 def all_data_points_fluences_vs_current_AD590_parrallel(desired_voltage):
-    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
-    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
-    npn_df = pd.read_csv(npn_path)
-    pnp_df = pd.read_csv(pnp_path)
-
     def process_row(row_npn, row_pnp, desired_voltage):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
         current = generate_single_current_value_AD590(
@@ -159,7 +154,7 @@ def all_data_points_fluences_vs_current_AD590_parrallel(desired_voltage):
         return (avg_fluences, current)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        tasks_args = [(row_npn, row_pnp, desired_voltage) for (_, row_npn), (_, row_pnp) in zip (npn_df.iterrows(), pnp_df.iterrows())]
+        tasks_args = [(row_npn, row_pnp, desired_voltage) for (_, row_npn), (_, row_pnp) in zip (NPN_DF.iterrows(), PNP_DF.iterrows())]
         results = list(executor.map(lambda args: process_row(*args), tasks_args))
         return results
 
@@ -219,33 +214,26 @@ def generate_voltage_value_LM741(pnp_is: float, pnp_n: float, npn_is: float, npn
         os.remove(xyce_output_tempfile.name)
 
 def generate_3_voltages_LM741(pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, desired_voltage: float):
-    vO1 = generate_voltage_value_LM741(
-            pnp_is = pnp_is,
-            pnp_n = pnp_n,
-            npn_is = npn_is,
-            npn_n = npn_n,
-            desired_voltage = desired_voltage,
-            testbench_path = IOS_VOS_IB_1_PATH
-    )
-    vO2 = generate_voltage_value_LM741(
-            pnp_is = pnp_is,
-            pnp_n = pnp_n,
-            npn_is = npn_is,
-            npn_n = npn_n,
-            desired_voltage = desired_voltage,
-            testbench_path = IOS_VOS_IB_2_PATH
-    )
-    vO3 = generate_voltage_value_LM741(
-            pnp_is = pnp_is,
-            pnp_n = pnp_n,
-            npn_is = npn_is,
-            npn_n = npn_n,
-            desired_voltage = desired_voltage,
-            testbench_path = IOS_VOS_IB_3_PATH
-    )
-    return vO1, vO2, vO3
+    paths = [IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH]
+
+    vOs = [generate_voltage_value_LM741(
+        pnp_is=pnp_is, 
+        pnp_n=pnp_n, 
+        npn_is=npn_is, 
+        npn_n=npn_n, 
+        desired_voltage=desired_voltage, 
+        testbench_path=path
+        ) 
+    for path in paths]
+
+    return tuple(vOs)
+
 
 def matrix_math_LM741(vO1: float, vO2: float, vO3: float):
+    """Triet gave us a matrix to use for calculating V_os, I_ib, I_os from V_O1, V_O2, V_O3.
+    This function is just following the instructions he sent us in an email"""
+
+    # These R values come from Triet
     R1 = 10e6
     R2 = 1e6
     R3 = 9e6
@@ -257,19 +245,14 @@ def matrix_math_LM741(vO1: float, vO2: float, vO3: float):
         [-(R1/R2+1), R1, R1/2],
     ])
 
-    x_vector = np.linalg.solve(matrix,v_out)
+    result_vector = np.linalg.solve(matrix,v_out)
 
-    vos_Iib_Ios = x_vector[0,0], x_vector[1,0], x_vector[2,0]
+    vos_Iib_Ios = result_vector[0,0], result_vector[1,0], result_vector[2,0]
 
     return vos_Iib_Ios
 
-def all_data_points_fluences_vs_current_LM741(desired_voltage):
-    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
-    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
-    npn_df = pd.read_csv(npn_path)
-    pnp_df = pd.read_csv(pnp_path)
-
-    for (idx_npn, row_npn),(idx_pnp, row_pnp) in zip(npn_df.iterrows(), pnp_df.iterrows()):
+def all_data_points_fluences_vs_Vos_Ib_Ios_LM741(desired_voltage):
+    for (idx_npn, row_npn),(idx_pnp, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows()):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
         vO1, vO2, vO3 = generate_3_voltages_LM741(
             pnp_is=row_pnp['Is'],
@@ -287,11 +270,10 @@ def all_data_points_fluences_vs_current_LM741(desired_voltage):
             'I_os': Ios
         }
 
-    pass
 def generate_data_for_LM741(voltage: float, fluences_min, fluences_max, specification: str):
     xs = []
     ys = []
-    for data_point in all_data_points_fluences_vs_current_LM741(voltage):
+    for data_point in all_data_points_fluences_vs_Vos_Ib_Ios_LM741(voltage):
         fluences = data_point['fluences']
         if fluences_min <= fluences <= fluences_max:
             xs.append(fluences)
@@ -307,15 +289,13 @@ def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, F
     pass
 
 def main():
-    # data = generate_data_for_AD590(voltage=5.0, fluences_min=-inf, fluences_max=inf)
-    data = generate_data_for_LM741(voltage=15.0, fluences_min=-inf, fluences_max=inf,specification= "V_os")
-    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
-    print(f"{x_axis_name}\t{y_axis_name}")
-    for i in range(5):
-        print(f"{x_axis_data[i]}\t\t{y_axis_data[i]}")
+    data = all_data_points_fluences_vs_Vos_Ib_Ios_LM741(desired_voltage=15)
+    first_5_datapoints = [next(data) for _ in range(5)]
+    df = pd.DataFrame(first_5_datapoints)
+    print(df)
     pass
 
-if __name__ == "__main__": # python best practice. Ask google or ChatGPT if confused.
+if __name__ == "__main__":
     main()
 
 
