@@ -287,6 +287,12 @@ def generate_data_for_LM741(voltage: float, fluences_min, fluences_max, specific
 
 # Function to return the data to GUI 
 def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
+    if Selected_Part == "AD590":
+        return generate_data_for_AD590(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
+    elif Selected_Part == "LM741":
+        return generate_data_for_LM741(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+    else:
+        assert False
     pass
 
 def main():
