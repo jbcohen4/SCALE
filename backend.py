@@ -193,7 +193,7 @@ def generate_data_for_LM741(voltage, fluences_min, fluences_max, specification: 
             'Fluences (n/cm^2)': fluences,
             'V_os (mV)': [V_os * 10 ** 3 for V_os, I_ib, I_os in Vos_Iib_Ios]
         }
-    elif specification == "I_b":
+    elif specification == "I_ib":
         return {
             'Fluences (n/cm^2)': fluences,
             'I_ib (nA)': [I_ib * 10 ** 9 for V_os, I_ib, I_os in Vos_Iib_Ios]
