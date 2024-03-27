@@ -218,10 +218,6 @@ def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, F
     pass
 
 def main():
-    data = all_data_points_fluences_vs_Vos_Ib_Ios_LM741(desired_voltage=15)
-    first_5_datapoints = [next(data) for _ in range(5)]
-    df = pd.DataFrame(first_5_datapoints)
-    print(df)
     pass
 
 if __name__ == "__main__":
