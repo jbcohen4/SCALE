@@ -4,6 +4,7 @@ from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+import pandas as pd
 
 import backend
 import exe_tools
@@ -58,10 +59,9 @@ def draw_graph():
     Voltage = 5.0 if Voltage == "" else float(Voltage)
     Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
-    # data = backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
+
     data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
 
-    import pandas as pd
     df = pd.DataFrame.from_dict(data, orient='index').transpose()
     print(df)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()

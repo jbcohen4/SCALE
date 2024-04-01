@@ -3,7 +3,7 @@ import exe_tools
 from pathlib import Path
 import re, tempfile, os
 import pandas as pd
-from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, NPN_DF, PNP_DF
+from constants import * 
 import concurrent.futures
 import numpy as np
 from functools import lru_cache
@@ -94,6 +94,31 @@ def parse_output_data(content: str) -> List[Tuple[float, float]]:
     
     return data_tuples
 
+
+
+def parse_output_data_dynamic(content: str) -> List[Tuple[float, ...]]:
+    """
+    Parses the content of a file written by Xyce and returns a list of tuples with the numbers it contains.
+    This function dynamically handles rows with any number of numeric columns.
+    """
+    data_tuples = []
+    
+    # Split the content into lines
+    lines = content.strip().split('\n')
+
+    for index, line in enumerate(lines):
+        # Try to split the line into numeric values
+        try:
+            numbers = tuple(map(float, line.split()))
+            if numbers:
+                data_tuples.append((index-1, ) + numbers)
+        except ValueError:
+            # Skip lines that do not contain valid numeric data like headers 
+            continue
+
+    return data_tuples
+
+
 @lru_cache
 def run_xyce_on_netlist_template(netlist_template: str, desired_vcc: float, fluences_min: float, fluences_max: float) -> List[Tuple[float, float]]:
     """You give this function a voltage and netlist template. The template should need to be filled in with exactly the following: 
@@ -125,6 +150,8 @@ def run_xyce_on_netlist_template(netlist_template: str, desired_vcc: float, flue
                 stdout, stderr, return_code = run_command(cmd_string)
                 out_text = read_file_as_string(temp_xyce_output_filename)
                 out_data = parse_output_data(out_text)
+                # print(f"Output for avg_fluences {avg_fluences}:\n{out_text}\n")
+                # print(out_data)
                 for vcc, other in out_data:
                     if vcc == desired_vcc:
                         return (avg_fluences, other)
@@ -206,13 +233,113 @@ def generate_data_for_LM741(voltage, fluences_min, fluences_max, specification: 
     else:
         assert False
 
+# Function to generate data from XYCE for LM741 Slew Rate & Supply Current
+# It uses a different netlist template for Slew Rate and Supply Current and gets different outputs where columns are 3 instead of 2.
+@lru_cache(maxsize=None)
+def run_xyce_on_netlist_template_LM741_SLEW_RATE(netlist_template: str, desired_vcc: float, fluences_min: float, fluences_max: float) -> List[Tuple[float, float]]:
+    def process_row(row_npn, row_pnp):
+        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
+        if fluences_min <= avg_fluences <= fluences_max:
+            netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+            xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                netlist_tempfile.close()
+                xyce_output_file.close()
+                temp_netlist_filename = netlist_tempfile.name
+                temp_xyce_output_filename = xyce_output_file.name
+                d = {
+                    "output_filename": temp_xyce_output_filename,
+                    "PNP_IS": row_pnp['Is'],
+                    "PNP_N": row_pnp['n'],
+                    "NPN_IS": row_npn['Is'],
+                    "NPN_N": row_npn['n']
+                }
+                filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+                write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+                cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+                stdout, stderr, return_code = run_command(cmd_string)
+                out_text = read_file_as_string(temp_xyce_output_filename)
+                out_data = parse_output_data_dynamic(out_text)
+                # print(f"Output for avg_fluences {avg_fluences}:\n{out_text}\n")
+                # print(f"Out put in terms of tuple:\n {out_data}\n")
+                if out_data:
+                    v3_values = [v_3 for _, _, _, v_3, _ in out_data]
+                    min_v3 = min(v3_values)
+                    max_v3 = max(v3_values)
+                    delta_v3 = max_v3 - min_v3
+                    
+                    v1 = (delta_v3 * 0.1 ) + min_v3
+                    v2 = (delta_v3 * 0.9 ) + min_v3
+
+                    t1 = t2 = prev_time = None
+
+                    for _, time, _, v_3, _ in out_data:
+                        if t1 is None and v_3 >= v1:
+                            t1 = prev_time if prev_time is not None else time
+                        if t2 is None and v_3 >= v2:
+                            t2 = prev_time if prev_time is not None else time
+                        prev_time = time
+
+                        if t1 is not None and t2 is not None:
+                            break
+                    
+                    if t1 is not None and t2 is not None and t1 != t2:
+                        slew_rate = ((v2 - v1) / (t2 - t1)) / 10 ** 6
+                    else:
+                        slew_rate = None
+
+                    _,_,_,_,supply_current = out_data[0]
+                    # print(slew_rate, supply_current)
+                    return (avg_fluences, slew_rate, supply_current)
+                assert False
+            finally:
+                netlist_tempfile.close()
+                xyce_output_file.close()
+                os.remove(netlist_tempfile.name)
+                os.remove(xyce_output_file.name)
+        else:
+            return None
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        tasks_args = [(row_npn, row_pnp) for (_, row_npn), (_, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows())]
+        results = list(ex.map(lambda args: process_row(*args), tasks_args))
+        return [r for r in results if r is not None]
+
+# Function to generate data for LM741 Slew Rate and Supply Current 
+# It uses a different netlist template slew rate and supply current and gets different outputs from xyce
+def generate_data_for_LM741_SLEW_RATE(voltage, fluences_min, fluences_max, specification: str):
+    testbench_path = SLEW_RATE_AND_SUPP_CURRENT
+    testbench_string = read_file_as_string(testbench_path)
+    subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
+    full_netlist_template = testbench_string + "\n" + subcircuit_string
+    xyce_output = run_xyce_on_netlist_template_LM741_SLEW_RATE(full_netlist_template, voltage, fluences_min, fluences_max)
+    print("xyce_output: ")
+    for item in xyce_output:
+        print(item)
+    fluences = [f for f, _, _ in xyce_output]
+    if specification == "Slew_rate":
+        return {
+            'Fluences (n/cm^2)': fluences,
+            'Slew_rate (V/µs)': [slew_rate for _, slew_rate,_ in xyce_output]
+        }
+    elif specification == "Supply_current":
+        return {
+            'Fluences (n/cm^2)': fluences,
+            'Supply_current (µA)': [supply_current * 10 ** 3 for _, _, supply_current in xyce_output]
+        }
+    else:
+        assert False
 
 # Function to return the data to GUI 
 def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
     if Selected_Part == "AD590":
         return generate_data_for_AD590(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
     elif Selected_Part == "LM741":
-        return generate_data_for_LM741(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+        if Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            print("in vos")
+            return generate_data_for_LM741(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+        elif Selected_Specification in ["Slew_rate", "Supply_current"]:
+            print("in slew rate ")
+            return generate_data_for_LM741_SLEW_RATE(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
     else:
         assert False
     pass
