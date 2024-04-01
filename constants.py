@@ -13,7 +13,7 @@ IOS_VOS_IB_3_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_3.cir")
 
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
-PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
+PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
