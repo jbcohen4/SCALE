@@ -3,7 +3,7 @@ import exe_tools
 from pathlib import Path
 import re, tempfile, os
 import pandas as pd
-from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, NPN_DF, PNP_DF
+from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, LM471_ACGAIN_TESTBENCH, NPN_DF, PNP_DF
 import concurrent.futures
 import numpy as np
 from functools import lru_cache
@@ -203,8 +203,74 @@ def generate_data_for_LM741(voltage, fluences_min, fluences_max, specification: 
             'Fluences (n/cm^2)': fluences,
             'I_os (nA)': [I_os * 10 ** 9 for V_os, I_ib, I_os in Vos_Iib_Ios]
         }
+    elif specification == "ACgain":
+        vos = [vos[0] for vos in Vos_Iib_Ios]
+        return {
+            'Fluences (n/cm^2)': fluences,
+            'ACgain': [gain for gain in openLoopGain(vos)]
+        }
     else:
         assert False
+
+def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, netlist: str) -> float:
+    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        temp_netlist_filename = netlist_tempfile.name
+        temp_xyce_output_filename = xyce_output_file.name
+        d = {
+            "vos": vos,
+            "output_filename": temp_xyce_output_filename,
+            "PNP_IS": pnp_is,
+            "PNP_N": pnp_n,
+            "NPN_IS": npn_is,
+            "NPN_N": npn_n
+        }
+
+        filled_in_netlist_str = process_string_with_replacements(netlist, d)
+        write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+        cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+        stdout, stderr, return_code = run_command(cmd_string)
+        out_text = read_file_as_string(temp_xyce_output_filename)
+        out_data = parse_output_data(out_text)
+       
+        for freq, vdb in out_data:
+            if freq == 100:
+                return vdb
+        assert False
+    finally:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        os.remove(netlist_tempfile.name)
+        os.remove(xyce_output_file.name)
+
+def openLoopGain(vos_list):
+    testbench_string =  read_file_as_string(LM471_ACGAIN_TESTBENCH)
+    subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
+    full_netlist_template = testbench_string + "\n" + subcircuit_string 
+    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
+    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
+    npn_df = pd.read_csv(npn_path)
+    pnp_df = pd.read_csv(pnp_path)
+    
+    for (idx_npn, row_npn),(idx_pnp, row_pnp), vos in zip(npn_df.iterrows(), pnp_df.iterrows(), vos_list):
+        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
+        gain = run_ACgain_on_xyce(
+            vos = vos,
+            pnp_is=row_pnp['Is'],
+            pnp_n=row_pnp['n'],
+            npn_is=row_npn['Is'],
+            npn_n=row_npn['n'],
+            netlist = full_netlist_template
+            )
+        yield gain
+    pass
+    
+
+
+
 
 
 # Function to return the data to GUI 
@@ -218,6 +284,7 @@ def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, F
     pass
 
 def main():
+    print(generate_data_for_LM741(voltage=15, fluences_min=-inf, fluences_max=inf, specification="ACgain"))
     pass
 
 if __name__ == "__main__":
