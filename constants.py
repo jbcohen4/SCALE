@@ -14,7 +14,7 @@ SLEW_RATE_AND_SUPP_CURRENT = exe_tools.adjust_path("testbenches/Slew_rate_Supp_c
 
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
-PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
+PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
