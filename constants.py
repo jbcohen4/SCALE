@@ -9,6 +9,7 @@ LM741_NETLIST_PATH = exe_tools.adjust_path("netlists/LM741_subckt_post_rad.cir")
 IOS_VOS_IB_1_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_1.cir")
 IOS_VOS_IB_2_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_2.cir")
 IOS_VOS_IB_3_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_3.cir")
+LM471_ACGAIN_TESTBENCH = exe_tools.adjust_path("testbenches/LM741_ACgain_testbench.cir")
 
 
 # NPN and PNP parameters as dataframes
