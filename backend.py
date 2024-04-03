@@ -260,7 +260,7 @@ def run_xyce_on_netlist_template_LM741_SLEW_RATE(netlist_template: str, desired_
                 stdout, stderr, return_code = run_command(cmd_string)
                 out_text = read_file_as_string(temp_xyce_output_filename)
                 out_data = parse_output_data_dynamic(out_text)
-                # print(f"Output for avg_fluences {avg_fluences}:\n{out_text}\n")
+                print(f"Output for avg_fluences {avg_fluences}:\n{out_text}\n")
                 # print(f"Out put in terms of tuple:\n {out_data}\n")
                 if out_data:
                     v3_values = [v_3 for _, _, _, v_3, _ in out_data]

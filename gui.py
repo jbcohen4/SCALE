@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import LabelFrame, StringVar, OptionMenu, ttk
+from tkinter import LabelFrame, StringVar, OptionMenu, ttk, filedialog
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -47,6 +47,7 @@ def validate_numerical(value):
 
 
 def draw_graph():
+    global plot_data
     # get data from user
     Selected_Part = var1.get()
     Selected_Specification = var2.get()
@@ -62,8 +63,8 @@ def draw_graph():
 
     data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
 
-    df = pd.DataFrame.from_dict(data, orient='index').transpose()
-    print(df)
+    plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
+    print(plot_data)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
@@ -99,6 +100,23 @@ def clear_function():
     for widget in root.winfo_children():
         if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
             widget.destroy()
+
+# function to save the plot data to CSV file
+def save_plot_data():
+    global plot_data
+    if not plot_data.empty:
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="Save the plot data as CSV"
+        )
+        if filepath:
+            plot_data.to_csv(filepath, index=False)
+            print(f'Plot data saved to {filepath}')
+        else:
+            print('No file selected')
+    else:
+        print('No data to save')
 
 
 # Frame 1
@@ -198,7 +216,7 @@ button_border_width = 2
 execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
 execute_button.grid(row=0, column=1, padx=5, pady=5)
 
-save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
+save_button = tk.Button(frame3, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
 save_button.grid(row=1, column=1, padx=5, pady=5)
 
 clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
