@@ -5,7 +5,7 @@ a = Analysis(
     ['gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('csvs/*', 'csvs'), ('netlists/AD590_template.cir', 'netlists'), ('xyce/*', 'xyce')],
+    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'), ('testbenches/*', 'testbenches'), ('xyce/*', 'xyce')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

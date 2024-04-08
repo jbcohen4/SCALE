@@ -10,6 +10,7 @@ IOS_VOS_IB_1_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_1.cir")
 IOS_VOS_IB_2_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_2.cir")
 IOS_VOS_IB_3_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_3.cir")
 LM471_ACGAIN_TESTBENCH = exe_tools.adjust_path("testbenches/LM741_ACgain_testbench.cir")
+SLEW_RATE_AND_SUPP_CURRENT = exe_tools.adjust_path("testbenches/Slew_rate_Supp_curr.cir")
 
 
 # NPN and PNP parameters as dataframes
@@ -19,5 +20,5 @@ PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
-    "LM741": ["V_os", "I_ib", "I_os"]
+    "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current"]
 }
