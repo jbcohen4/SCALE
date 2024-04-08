@@ -20,5 +20,8 @@ PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
-    "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current"]
+    "LM741": ["V_os", "I_ib", "I_os"],
+    "LM 193" : ["V_os", "I_ib", "I_os"],
+    "LM 111" : ["V_os", "I_ib", "I_os"]
+
 }

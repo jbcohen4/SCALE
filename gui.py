@@ -57,7 +57,10 @@ def draw_graph():
     Fluence_Max = textbox_fluences_max.get()
     
     # validate data and put in default values as needed
-    Voltage = 5.0 if Voltage == "" else float(Voltage)
+    if Selected_Part == "AD590":
+        Voltage = 5.0 if Voltage == "" else float(Voltage)
+    else:
+        Voltage = 15.0 if Voltage == "" else float(Voltage)
     Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
 
