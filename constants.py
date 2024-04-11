@@ -4,13 +4,17 @@ AD590_NETLIST_TEMPLATE_PATH = exe_tools.adjust_path("netlists/AD590_template.cir
 XYCE_EXE_PATH = exe_tools.adjust_path("xyce/Xyce.exe")
 
 #paths for the LM741
-LM741_NETLIST_PATH = exe_tools.adjust_path("netlists/LM741_subckt_post_rad.cir")
+LM741_NETLIST = exe_tools.read_txt_file("netlists/LM741_template.cir") # I figured reading in the actual file would be better, since we'll have to do it later anyways
+
+# I want to eventually stop putting paths here and just load the files. I think it would help us catch bugs faster when files get renamed. (--Joe)
+LM741_NETLIST_PATH = exe_tools.adjust_path("netlists/LM471_template.cir")
 #testbenches for the LM741
+LM741_CLUDGE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_cludge_testbench_v1.cir")
 IOS_VOS_IB_1_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_1.cir")
 IOS_VOS_IB_2_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_2.cir")
 IOS_VOS_IB_3_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_3.cir")
-LM471_ACGAIN_TESTBENCH = exe_tools.adjust_path("testbenches/LM741_ACgain_testbench.cir")
-SLEW_RATE_AND_SUPP_CURRENT = exe_tools.adjust_path("testbenches/Slew_rate_Supp_curr.cir")
+LM471_ACGAIN_TESTBENCH_PATH = exe_tools.adjust_path("testbenches/LM741_ACgain_testbench.cir")
+SLEW_RATE_AND_SUPP_CURRENT_PATH = exe_tools.adjust_path("testbenches/Slew_rate_Supp_curr.cir")
 
 
 # NPN and PNP parameters as dataframes
@@ -23,5 +27,4 @@ DROPDOWN_MAPPING = {
     "LM741": ["V_os", "I_ib", "I_os"],
     "LM 193" : ["V_os", "I_ib", "I_os"],
     "LM 111" : ["V_os", "I_ib", "I_os"]
-
 }

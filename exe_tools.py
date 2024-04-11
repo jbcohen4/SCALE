@@ -9,6 +9,11 @@ def read_csv_to_df(csv_path: str) -> pd.DataFrame:
     """Works for both running as a python script and running as a .exe from pyinstaller"""
     return pd.read_csv(adjust_path(csv_path))
 
+def read_txt_file(path: str) -> str:
+    path = adjust_path(path)
+    with open(path, 'r') as file:
+        return file.read()
+
 from uuid import uuid4 # ChatGPT says uuid4 is the best kind of uuid
 PYTHON_MODE = uuid4() 
 EXE_MODE = uuid4()
