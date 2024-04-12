@@ -114,6 +114,31 @@ def parse_output_data_dynamic(content: str) -> List[Tuple[float, ...]]:
 
     return data_tuples
 
+@lru_cache
+def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]:
+    assert "{output_filename}" in netlist_template
+    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        temp_netlist_filename = netlist_tempfile.name
+        temp_xyce_output_filename = xyce_output_file.name
+        d = {
+            "output_filename": temp_xyce_output_filename
+        }
+        filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+        write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+        cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+        stdout, stderr, return_code = run_command(cmd_string)
+        out_text = read_file_as_string(temp_xyce_output_filename)
+        assert len(out_text) > 0
+        return (out_text)
+    finally:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        os.remove(netlist_tempfile.name)
+        os.remove(xyce_output_file.name)
 
 
 @lru_cache # all subcircuits + testbenches + specifications should use this. It's super general and works great.
@@ -204,9 +229,63 @@ def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: st
     else:
         assert False
 
+def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: str):
+    print("generate_data_for_LM111")
+    subcircuit_pre_rad = LM111_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM111_SUBCKT_POST_RAD_TEMPLATE
+    testbench = LM111_TESTBENCH_TEMPLATE
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], []
+    
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, V_os, V_out, I_ib, I_os = row
+        if V_os == 0:
+            fluences.append(set_fluence)
+            i_ib.append(I_ib * 10 ** 9) # amps to nA
+            i_os.append(I_os * 10 ** 9) # amps to nA
+        if V_out > 4.89 :
+            v_os.append(V_os * 10 ** 3) # volts to mV
+            break
+    
+    # process for post_rad
+    store = False
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        # if store == False:
+        #     with open("output/post_rad.txt", 'w') as file:
+        #         file.write(out_text)
+        #     store = True
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, V_os, V_out, I_ib, I_os = row
+            if V_os ==  0:
+                fluences.append(fluence)
+                i_ib.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_ib * 10 ** 9) # amps to nA
+            if V_out > 4.89:
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                break
+        else:
+            assert False
+    
+    if specification == "V_os":
+        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+    else:
+        assert False 
 
-
-
+def generate_data_for_LM193(voltage, fluence_min, fluence_max, specification: str):
+    pass
 
 def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, netlist: str) -> float:
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
@@ -370,11 +449,13 @@ def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, F
         return generate_data_for_AD590(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
     elif Selected_Part == "LM741":
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:
-            print("in vos")
             return generate_data_for_LM741(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification in ["Slew_rate", "Supply_current"]:
-            print("in slew rate ")
             return generate_data_for_LM741_SLEW_RATE(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM111":
+        return generate_data_for_LM111(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM193":
+        return generate_data_for_LM193(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     else:
         assert False
     pass

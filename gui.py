@@ -3,6 +3,7 @@ from tkinter import LabelFrame, StringVar, OptionMenu, ttk, filedialog
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 
@@ -72,8 +73,6 @@ def draw_graph():
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
 
-
-    
     graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
     Chart_title = "Line Chart"
 
@@ -83,6 +82,17 @@ def draw_graph():
     ax.set_xlabel(x_axis_name)
     ax.set_ylabel(y_axis_name)
     ax.set_title(Chart_title)
+
+    # Define a custom formatter function
+    def custom_formatter(x, pos):
+        if x == 1e11:  # Check if the tick is at 10^11
+            return 'pre_rad'
+        else:
+            return f'{x:.0e}'  # Default scientific notation
+
+    # Apply the custom formatter to the x-axis
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
+
     plt.subplots_adjust(left=0.2)
 
     # Embedding the plot in the Tkinter window
