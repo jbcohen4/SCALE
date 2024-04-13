@@ -258,10 +258,10 @@ def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: st
     store = False
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
-        # if store == False:
-        #     with open("output/post_rad.txt", 'w') as file:
-        #         file.write(out_text)
-        #     store = True
+        if store == False:
+            with open("output/post_rad_LM111.txt", 'w') as file:
+                file.write(out_text)
+            store = True
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
@@ -285,7 +285,60 @@ def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: st
         assert False 
 
 def generate_data_for_LM193(voltage, fluence_min, fluence_max, specification: str):
-    pass
+    print("generate_data_for_LM193")
+    subcircuit_pre_rad = LM193_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM193_SUBCKT_POST_RAD_TEMPLATE
+    testbench = LM193_TESTBENCH_TEMPLATE
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], []
+    
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, V_os, V_out, I_ib, I_os = row
+        if V_os == 0:
+            fluences.append(set_fluence)
+            i_ib.append(I_ib * 10 ** 9) # amps to nA
+            i_os.append(I_os * 10 ** 9) # amps to nA
+        if V_out > 4.89 :
+            v_os.append(V_os * 10 ** 3) # volts to mV
+            print("v_os: ", v_os)
+            break
+    
+    # process for post_rad
+    store = False
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        if store == False:
+            with open("output/post_rad_LM193.txt", 'w') as file:
+                file.write(out_text)
+            store = True
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, V_os, V_out, I_ib, I_os = row
+            if V_os ==  0:
+                fluences.append(fluence)
+                i_ib.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_ib * 10 ** 9) # amps to nA
+            if V_out > 4.89:
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                break
+        else:
+            assert False
+    
+    if specification == "V_os":
+        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+    else:
+        assert False 
 
 def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, netlist: str) -> float:
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
