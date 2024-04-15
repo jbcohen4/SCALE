@@ -258,17 +258,17 @@ def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: st
     store = False
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
-        if store == False:
-            with open("output/post_rad_LM111.txt", 'w') as file:
-                file.write(out_text)
-            store = True
+        # if store == False:
+        #     with open("output/post_rad_LM111.txt", 'w') as file:
+        #         file.write(out_text)
+        #     store = True
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
             if V_os ==  0:
                 fluences.append(fluence)
                 i_ib.append(I_ib * 10 ** 9) # amps to nA
-                i_os.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_os * 10 ** 9) # amps to nA
             if V_out > 4.89:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 break
@@ -314,17 +314,17 @@ def generate_data_for_LM193(voltage, fluence_min, fluence_max, specification: st
     store = False
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
-        if store == False:
-            with open("output/post_rad_LM193.txt", 'w') as file:
-                file.write(out_text)
-            store = True
+        # if store == False:
+        #     with open("output/post_rad_LM193.txt", 'w') as file:
+        #         file.write(out_text)
+        #     store = True
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
             if V_os ==  0:
                 fluences.append(fluence)
                 i_ib.append(I_ib * 10 ** 9) # amps to nA
-                i_os.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_os * 10 ** 9) # amps to nA
             if V_out > 4.89:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 break

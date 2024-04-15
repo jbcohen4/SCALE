@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
 from tkinter import filedialog
+from tkinter import Label, LabelFrame, StringVar, OptionMenu, ttk, filedialog, PhotoImage
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -13,7 +14,7 @@ import pandas as pd
 import backend
 import exe_tools
 
-from constants import DROPDOWN_MAPPING
+from constants import *
 INFINITY = float('inf') 
 
 # Create Window for GUI
