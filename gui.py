@@ -2,7 +2,7 @@ import tkinter as tk
 
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
-
+from tkinter import filedialog
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -78,7 +78,7 @@ def draw_graph():
 
     graph_frame = create_frame(4, 0, "Graph", width=6, height=4)
 
-    Chart_title = "Line Chart"
+    Chart_title = ""
 
     fig, ax = plt.subplots()
     ax.plot(xs, ys, color = "maroon")
@@ -191,9 +191,24 @@ label_dataset.grid(row=2, column=0, sticky="we")
 label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset_vcc.grid(row=3, column=0, sticky="e")
 
+#set default voltage based on spec
+def update_default_voltage(*args):
+    if var1.get() == 'AD590':
+        default_voltage = "5"
+    else:
+        default_voltage = "15"
+    textbox_dataset_vcc.delete(0, 'end')  # Clear previous content
+    textbox_dataset_vcc.insert(0, default_voltage)
+
+# Whenever the spec changes, update the default voltage accordingly
+var1.trace_add('write', update_default_voltage)
+
+
+
 # Text Entry for Dataset with border and padding
 validate_dataset_vcc = (root.register(validate_numerical), '%P')
 textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc,width=7)
+textbox_dataset_vcc.insert(0,"5")
 textbox_dataset_vcc.grid(row=3, column=1, sticky="w")
 
 # Frame 2
