@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import LabelFrame, StringVar, OptionMenu, ttk, filedialog
+from tkinter import Label, LabelFrame, StringVar, OptionMenu, ttk, filedialog, PhotoImage
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -10,7 +10,7 @@ import pandas as pd
 import backend
 import exe_tools
 
-from constants import DROPDOWN_MAPPING
+from constants import *
 INFINITY = float('inf') 
 
 
@@ -24,9 +24,7 @@ root.title("Radiation on BJT explorer")
 root.geometry("800x750")
 
 # Set the background color of the root window
-
-root.configure(bg="cadetBlue4")
-
+root.configure(bg="maroon")
 
 # Adding frames for parts and specifications
 def create_frame(row, column, text, width=2, height=2):

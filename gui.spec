@@ -5,7 +5,7 @@ a = Analysis(
     ['gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'), ('testbenches/*', 'testbenches'), ('xyce/*', 'xyce')],
+    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'), ('testbenches/*', 'testbenches'), ('image/*', 'image'), ('xyce/*', 'xyce')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
