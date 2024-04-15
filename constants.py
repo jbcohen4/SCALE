@@ -6,6 +6,7 @@ AD590_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_template.cir")
 
 #paths for the LM741
 LM741_NETLIST = exe_tools.read_txt_file("netlists/LM741_template.cir") # I figured reading in the actual file would be better, since we'll have to do it later anyways
+LM741_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_subckt_Prerad.cir")
 
 # I want to eventually stop putting paths here and just load the files. I think it would help us catch bugs faster when files get renamed. (--Joe)
 LM741_NETLIST_PATH = exe_tools.adjust_path("netlists/LM471_template.cir")

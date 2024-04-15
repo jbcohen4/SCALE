@@ -201,12 +201,27 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
 
 
 def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: str):
+    subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM741_NETLIST
     testbench = LM741_CLUDGE_TESTBENCH
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     full_netlist = testbench + "\n" + subcircuit
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
     all_xyce_output = get_all_xyce_output_txt(full_netlist)
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_oss, i_ibs, i_oss = [], [], [], [] # the wierd s's in v_oss and such are meant to pronounced v_os's (the plural of v_os)
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, Vcc, _, V_os, I_ib, I_os = row
+        if Vcc == voltage:
+                fluences.append(set_fluence)
+                v_oss.append(V_os * 10 ** 3) # volts to mV
+                i_ibs.append(I_ib * 10 ** 9) # amps to nA
+                i_oss.append(I_os * 10 ** 9) # amps to nA
+                break
+    # process for post_rad
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
         parsed_output = parse_output_data_dynamic(out_text)
