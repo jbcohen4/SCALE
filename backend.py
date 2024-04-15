@@ -3,7 +3,7 @@ import exe_tools
 from pathlib import Path
 import re, tempfile, os
 import pandas as pd
-from constants import AD590_NETLIST_TEMPLATE_PATH, XYCE_EXE_PATH, LM741_NETLIST_PATH , IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH, LM471_ACGAIN_TESTBENCH, NPN_DF, PNP_DF
+from constants import * 
 import concurrent.futures
 import numpy as np
 from functools import lru_cache
@@ -33,22 +33,18 @@ def write_string_to_file(filename, string):
 
 def process_string_with_replacements(content: str, replacements_dict) -> str:
     """Replaces placeholders in the content with values from the replacements_dict.
-    Returns the updated content or an error if a placeholder is not found in the dictionary."""
+    Returns the updated content."""
 
     """Example: given: content="Hi. {x} says {y}." and replacements_dict={"x": bob, "y": howdy}, 
     This func will return "Hi. bob says howdy."
     """
-    # Find all placeholders in the content
-    placeholders = re.findall(r'\{(.*?)\}', content) # uses a regex from chatgpt. It finds all substrings enclosed by {}
-    
-    missing_keys = [placeholder for placeholder in placeholders if placeholder not in replacements_dict]
-    if missing_keys: # if there is at least 1 required key that is not found
-        return Err(f"Error: Looked for {', '.join(missing_keys)} but did not find.")
-    else:
-        for key, val in replacements_dict.items():
-            placeholder = "{" + key + "}"
-            content = content.replace(placeholder, str(val))
-        return content
+    for key, val in replacements_dict.items():
+        placeholder = "{" + key + "}"
+        if not placeholder in content: # whatever it is that we're trying to replace, that string should be in the content
+            print(f"missing placeholder: {placeholder}")
+            assert False
+        content = content.replace(placeholder, str(val))
+    return content
 
 def run_command(command):
     """Example usage:
@@ -62,8 +58,8 @@ def run_command(command):
     # Return the standard output, standard error, and exit code from the command
     return result.stdout, result.stderr, result.returncode
 
-
-def parse_output_data(content: str) -> List[Tuple[float, float]]:
+@DeprecationWarning # this guy really only makes sense for AD590 at the moment. We might want to delete it sometime. I don't know.
+def parse_output_data_2_rows(content: str) -> List[Tuple[float, float]]:
     """This takes the content of a file that xyce wrote to and returns a list of tuples of the numbers it gave
     Ex: if the content is
             V(2)             I(VOUT)     
@@ -94,123 +90,255 @@ def parse_output_data(content: str) -> List[Tuple[float, float]]:
     
     return data_tuples
 
-@lru_cache
-def run_xyce_on_netlist_template(netlist_template: str, desired_vcc: float, fluences_min: float, fluences_max: float) -> List[Tuple[float, float]]:
-    """You give this function a voltage and netlist template. The template should need to be filled in with exactly the following: 
-        {output_filename}, {PNP_IS}, {PNP_N}, {NPN_IS}, {NPN_N}. If the given template has more fields than this, this function will not work.
-    Also: The filled in netlist should have Xyce output a file with exactly 2 coloumns, or this function won't work. The AD590 netlist has 
-        2 output columns, so do the LM471 netlists for generating VO1, VO2, and VO3.
-    This function will NOT work for the LM471 generating slew rate or open loop gain, since those netlists make xyce output files with more than 2 columns.
+
+
+def parse_output_data_dynamic(content: str) -> List[Tuple[float, ...]]:
     """
+    Parses the content of a file written by Xyce and returns a list of tuples with the numbers it contains.
+    This function dynamically handles rows with any number of numeric columns.
+    """
+    data_tuples = []
+    
+    # Split the content into lines
+    lines = content.strip().split('\n')
+
+    for index, line in enumerate(lines):
+        # Try to split the line into numeric values
+        try:
+            numbers = tuple(map(float, line.split()))
+            if numbers:
+                data_tuples.append((index-1, ) + numbers)
+        except ValueError:
+            # Skip lines that do not contain valid numeric data like headers 
+            continue
+
+    return data_tuples
+
+@lru_cache
+def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]:
+    assert "{output_filename}" in netlist_template
+    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+    xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        temp_netlist_filename = netlist_tempfile.name
+        temp_xyce_output_filename = xyce_output_file.name
+        d = {
+            "output_filename": temp_xyce_output_filename
+        }
+        filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+        write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+        cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+        stdout, stderr, return_code = run_command(cmd_string)
+        out_text = read_file_as_string(temp_xyce_output_filename)
+        assert len(out_text) > 0
+        return (out_text)
+    finally:
+        netlist_tempfile.close()
+        xyce_output_file.close()
+        os.remove(netlist_tempfile.name)
+        os.remove(xyce_output_file.name)
+
+
+@lru_cache # all subcircuits + testbenches + specifications should use this. It's super general and works great.
+# We'll have to modify it a little bit to deal with AC gain. That's cool. We will do that.
+def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
+    """Returns an array of (float, str) tuples. The float represents the fluences of the run, the string is the data that xyce gave us back."""
+    assert "{output_filename}" in netlist_template
     def process_row(row_npn, row_pnp):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
-        if fluences_min <= avg_fluences <= fluences_max:
-            netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
-            xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
-            try:
-                netlist_tempfile.close()
-                xyce_output_file.close()
-                temp_netlist_filename = netlist_tempfile.name
-                temp_xyce_output_filename = xyce_output_file.name
-                d = {
-                    "output_filename": temp_xyce_output_filename,
-                    "PNP_IS": row_pnp['Is'],
-                    "PNP_N": row_pnp['n'],
-                    "NPN_IS": row_npn['Is'],
-                    "NPN_N": row_npn['n']
-                }
-                filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
-                write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
-                cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
-                stdout, stderr, return_code = run_command(cmd_string)
-                out_text = read_file_as_string(temp_xyce_output_filename)
-                out_data = parse_output_data(out_text)
-                for vcc, other in out_data:
-                    if vcc == desired_vcc:
-                        return (avg_fluences, other)
-                assert False
-            finally:
+        netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+        xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            netlist_tempfile.close()
+            xyce_output_file.close()
+            temp_netlist_filename = netlist_tempfile.name
+            temp_xyce_output_filename = xyce_output_file.name
+            d = {
+                "output_filename": temp_xyce_output_filename,
+                "PNP_IS": row_pnp['Is'],
+                "PNP_N": row_pnp['n'],
+                "NPN_IS": row_npn['Is'],
+                "NPN_N": row_npn['n']
+            }
+            filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+            write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+            cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+            stdout, stderr, return_code = run_command(cmd_string)
+            out_text = read_file_as_string(temp_xyce_output_filename)
+            assert len(out_text) > 0
+            return (avg_fluences, out_text)
+        finally:
                 netlist_tempfile.close()
                 xyce_output_file.close()
                 os.remove(netlist_tempfile.name)
                 os.remove(xyce_output_file.name)
-        else:
-            return None
     with concurrent.futures.ThreadPoolExecutor() as ex:
         tasks_args = [(row_npn, row_pnp) for (_, row_npn), (_, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows())]
-        results = list(ex.map(lambda args: process_row(*args), tasks_args))
-        return [r for r in results if r is not None]
+        return list(ex.map(lambda args: process_row(*args), tasks_args))
+
 
 
 def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
-    AD590_netlist_template_str = read_file_as_string(AD590_NETLIST_TEMPLATE_PATH)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(AD590_NETLIST_TEMPLATE) if fluences_min <= fluence <= fluences_max]
     xs, ys = [], []
-    for fluences, current in run_xyce_on_netlist_template(AD590_netlist_template_str, voltage, fluences_min, fluences_max):
-        assert fluences_min <= fluences <= fluences_max
-        xs.append(fluences)
-        ys.append(current * 10 ** 6) # convert amps to micro amps
+    for fluence, out_txt in xyce_output:
+        parsed_output = parse_output_data_dynamic(out_txt)
+        for row in parse_output_data_dynamic(out_txt):
+            _, Vcc, I_out = row
+            if Vcc == voltage:
+                xs.append(fluence)
+                ys.append(I_out * 10 ** 6) # convert amps to micro amps
+                break
+        else:
+            raise Exception(f"The user asked for voltage: {voltage}V, but that was not one of the Vcc settings that we ran")
     return {
         'Fluences (n/cm^2)': xs,
         'I_out (µA)': ys
     }
 
-def matrix_math_LM741(vO1: float, vO2: float, vO3: float):
-    """Triet gave us a matrix to use for calculating V_os, I_ib, I_os from V_O1, V_O2, V_O3.
-    This function is just following the instructions he sent us in an email"""
 
-    # These R values come from Triet
-    R1 = 10e6
-    R2 = 1e6
-    R3 = 9e6
-    
-    v_out = np.array([[vO1],[vO2],[vO3]])
-    matrix = np.array([
-        [-(R1/R2+1), R1-R3*(R1/R2+1), (R1+R3*(R1/R2+1))/2],
-        [-1, -R3, R3/2],
-        [-(R1/R2+1), R1, R1/2],
-    ])
 
-    result_vector = np.linalg.solve(matrix,v_out)
-
-    V_os, I_ib, I_os = result_vector[0,0], result_vector[1,0], result_vector[2,0]
-
-    return  V_os, I_ib, I_os
-
-def generate_data_for_LM741(voltage, fluences_min, fluences_max, specification: str):
-    testbench_paths = [IOS_VOS_IB_1_PATH, IOS_VOS_IB_2_PATH, IOS_VOS_IB_3_PATH]
-    testbench_strings = [read_file_as_string(path) for path in testbench_paths]
-    subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
-    full_netlist_templates = [testbench_string + "\n" + subcircuit_string for testbench_string in testbench_strings]
-    xyce_outputs = [run_xyce_on_netlist_template(netlist_template_str, voltage, fluences_min, fluences_max) for netlist_template_str in full_netlist_templates]
-    assert all(len(l) == len(xyce_outputs[0]) for l in xyce_outputs) # all 3 lists in xyce_outputs should be the same length
-    f1_f2_f3 = [(f1, f2, f3) for (f1, _), (f2, _), (f3, _) in zip(*xyce_outputs)] # get all the fluence values
-    for f1, f2, f3 in f1_f2_f3: assert f1 == f2 == f3 # the fluence values should be identical
-    v_outs = [(vout1, vout2, vout3) for (_, vout1), (_, vout2), (_, vout3) in zip (*xyce_outputs)]
-    Vos_Iib_Ios = [matrix_math_LM741(vout1, vout2, vout3) for vout1, vout2, vout3 in v_outs]
-    fluences = [f1 for (f1, _), (f2, _), (f3, _) in zip(*xyce_outputs)]
+def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: str):
+    subcircuit = LM741_NETLIST
+    testbench = LM741_CLUDGE_TESTBENCH
+    full_netlist = testbench + "\n" + subcircuit
+    all_xyce_output = get_all_xyce_output_txt(full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_oss, i_ibs, i_oss = [], [], [], [] # the wierd s's in v_oss and such are meant to pronounced v_os's (the plural of v_os)
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, Vcc, _, V_os, I_ib, I_os = row # the first _ is the idx. The second _ is V(3) in the xyce output. 
+            if Vcc == voltage:
+                fluences.append(fluence)
+                v_oss.append(V_os * 10 ** 3) # volts to mV
+                i_ibs.append(I_ib * 10 ** 9) # amps to nA
+                i_oss.append(I_os * 10 ** 9) # amps to nA
+                break
+        else: # google "python for else" if confused
+            assert False # The problem here is that we can't give them the voltage they asked for. We should do better than this
     if specification == "V_os":
-        return {
-            'Fluences (n/cm^2)': fluences,
-            'V_os (mV)': [V_os * 10 ** 3 for V_os, I_ib, I_os in Vos_Iib_Ios]
-        }
+        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_oss}
     elif specification == "I_ib":
-        return {
-            'Fluences (n/cm^2)': fluences,
-            'I_ib (nA)': [I_ib * 10 ** 9 for V_os, I_ib, I_os in Vos_Iib_Ios]
-        }
+        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ibs}
     elif specification == "I_os":
-        return {
-            'Fluences (n/cm^2)': fluences,
-            'I_os (nA)': [I_os * 10 ** 9 for V_os, I_ib, I_os in Vos_Iib_Ios]
-        }
-    elif specification == "ACgain":
-        vos = [vos[0] for vos in Vos_Iib_Ios]
-        return {
-            'Fluences (n/cm^2)': fluences,
-            'ACgain': [gain for gain in openLoopGain(vos)]
-        }
+        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_oss}
     else:
         assert False
+
+def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: str):
+    print("generate_data_for_LM111")
+    subcircuit_pre_rad = LM111_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM111_SUBCKT_POST_RAD_TEMPLATE
+    testbench = LM111_TESTBENCH_TEMPLATE
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], []
+    
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, V_os, V_out, I_ib, I_os = row
+        if V_os == 0:
+            fluences.append(set_fluence)
+            i_ib.append(I_ib * 10 ** 9) # amps to nA
+            i_os.append(I_os * 10 ** 9) # amps to nA
+        if V_out > 4.89 :
+            v_os.append(V_os * 10 ** 3) # volts to mV
+            break
+    
+    # process for post_rad
+    store = False
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        if store == False:
+            with open("output/post_rad_LM111.txt", 'w') as file:
+                file.write(out_text)
+            store = True
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, V_os, V_out, I_ib, I_os = row
+            if V_os ==  0:
+                fluences.append(fluence)
+                i_ib.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_ib * 10 ** 9) # amps to nA
+            if V_out > 4.89:
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                break
+        else:
+            assert False
+    
+    if specification == "V_os":
+        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+    else:
+        assert False 
+
+def generate_data_for_LM193(voltage, fluence_min, fluence_max, specification: str):
+    print("generate_data_for_LM193")
+    subcircuit_pre_rad = LM193_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM193_SUBCKT_POST_RAD_TEMPLATE
+    testbench = LM193_TESTBENCH_TEMPLATE
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], []
+    
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, V_os, V_out, I_ib, I_os = row
+        if V_os == 0:
+            fluences.append(set_fluence)
+            i_ib.append(I_ib * 10 ** 9) # amps to nA
+            i_os.append(I_os * 10 ** 9) # amps to nA
+        if V_out > 4.89 :
+            v_os.append(V_os * 10 ** 3) # volts to mV
+            print("v_os: ", v_os)
+            break
+    
+    # process for post_rad
+    store = False
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        if store == False:
+            with open("output/post_rad_LM193.txt", 'w') as file:
+                file.write(out_text)
+            store = True
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, V_os, V_out, I_ib, I_os = row
+            if V_os ==  0:
+                fluences.append(fluence)
+                i_ib.append(I_ib * 10 ** 9) # amps to nA
+                i_os.append(I_ib * 10 ** 9) # amps to nA
+            if V_out > 4.89:
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                break
+        else:
+            assert False
+    
+    if specification == "V_os":
+        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+    else:
+        assert False 
 
 def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, netlist: str) -> float:
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
@@ -234,7 +362,7 @@ def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, np
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        out_data = parse_output_data(out_text)
+        out_data = parse_output_data_2_rows(out_text)
        
         for freq, vdb in out_data:
             if freq == 100:
@@ -247,7 +375,7 @@ def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, np
         os.remove(xyce_output_file.name)
 
 def openLoopGain(vos_list):
-    testbench_string =  read_file_as_string(LM471_ACGAIN_TESTBENCH)
+    testbench_string =  read_file_as_string(LM471_ACGAIN_TESTBENCH_PATH)
     subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
     full_netlist_template = testbench_string + "\n" + subcircuit_string 
     npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
@@ -272,19 +400,120 @@ def openLoopGain(vos_list):
 
 
 
+# Function to generate data from XYCE for LM741 Slew Rate & Supply Current
+# It uses a different netlist template for Slew Rate and Supply Current and gets different outputs where columns are 3 instead of 2.
+@lru_cache(maxsize=None)
+def run_xyce_on_netlist_template_LM741_SLEW_RATE(netlist_template: str, desired_vcc: float, fluences_min: float, fluences_max: float) -> List[Tuple[float, float]]:
+    def process_row(row_npn, row_pnp):
+        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
+        if fluences_min <= avg_fluences <= fluences_max:
+            netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+            xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                netlist_tempfile.close()
+                xyce_output_file.close()
+                temp_netlist_filename = netlist_tempfile.name
+                temp_xyce_output_filename = xyce_output_file.name
+                d = {
+                    "output_filename": temp_xyce_output_filename,
+                    "PNP_IS": row_pnp['Is'],
+                    "PNP_N": row_pnp['n'],
+                    "NPN_IS": row_npn['Is'],
+                    "NPN_N": row_npn['n']
+                }
+                filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+                write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+                cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+                stdout, stderr, return_code = run_command(cmd_string)
+                out_text = read_file_as_string(temp_xyce_output_filename)
+                out_data = parse_output_data_dynamic(out_text)
+                print(f"Output for avg_fluences {avg_fluences}:\n{out_text}\n")
+                # print(f"Out put in terms of tuple:\n {out_data}\n")
+                if out_data:
+                    v3_values = [v_3 for _, _, _, v_3, _ in out_data]
+                    min_v3 = min(v3_values)
+                    max_v3 = max(v3_values)
+                    delta_v3 = max_v3 - min_v3
+                    
+                    v1 = (delta_v3 * 0.1 ) + min_v3
+                    v2 = (delta_v3 * 0.9 ) + min_v3
+
+                    t1 = t2 = prev_time = None
+
+                    for _, time, _, v_3, _ in out_data:
+                        if t1 is None and v_3 >= v1:
+                            t1 = prev_time if prev_time is not None else time
+                        if t2 is None and v_3 >= v2:
+                            t2 = prev_time if prev_time is not None else time
+                        prev_time = time
+
+                        if t1 is not None and t2 is not None:
+                            break
+                    
+                    if t1 is not None and t2 is not None and t1 != t2:
+                        slew_rate = ((v2 - v1) / (t2 - t1)) / 10 ** 6
+                    else:
+                        slew_rate = None
+
+                    _,_,_,_,supply_current = out_data[0]
+                    # print(slew_rate, supply_current)
+                    return (avg_fluences, slew_rate, supply_current)
+                assert False
+            finally:
+                netlist_tempfile.close()
+                xyce_output_file.close()
+                os.remove(netlist_tempfile.name)
+                os.remove(xyce_output_file.name)
+        else:
+            return None
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        tasks_args = [(row_npn, row_pnp) for (_, row_npn), (_, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows())]
+        results = list(ex.map(lambda args: process_row(*args), tasks_args))
+        return [r for r in results if r is not None]
+
+# Function to generate data for LM741 Slew Rate and Supply Current 
+# It uses a different netlist template slew rate and supply current and gets different outputs from xyce
+def generate_data_for_LM741_SLEW_RATE(voltage, fluences_min, fluences_max, specification: str):
+    testbench_path = SLEW_RATE_AND_SUPP_CURRENT_PATH
+    testbench_string = read_file_as_string(testbench_path)
+    subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
+    full_netlist_template = testbench_string + "\n" + subcircuit_string
+    xyce_output = run_xyce_on_netlist_template_LM741_SLEW_RATE(full_netlist_template, voltage, fluences_min, fluences_max)
+    print("xyce_output: ")
+    for item in xyce_output:
+        print(item)
+    fluences = [f for f, _, _ in xyce_output]
+    if specification == "Slew_rate":
+        return {
+            'Fluences (n/cm^2)': fluences,
+            'Slew_rate (V/µs)': [slew_rate for _, slew_rate,_ in xyce_output]
+        }
+    elif specification == "Supply_current":
+        return {
+            'Fluences (n/cm^2)': fluences,
+            'Supply_current (µA)': [supply_current * 10 ** 3 for _, _, supply_current in xyce_output]
+        }
+    else:
+        assert False
 
 # Function to return the data to GUI 
 def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
     if Selected_Part == "AD590":
         return generate_data_for_AD590(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
     elif Selected_Part == "LM741":
-        return generate_data_for_LM741(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+        if Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            return generate_data_for_LM741(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        elif Selected_Specification in ["Slew_rate", "Supply_current"]:
+            return generate_data_for_LM741_SLEW_RATE(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM111":
+        return generate_data_for_LM111(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM193":
+        return generate_data_for_LM193(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     else:
         assert False
     pass
 
 def main():
-    print(generate_data_for_LM741(voltage=15, fluences_min=-inf, fluences_max=inf, specification="ACgain"))
     pass
 
 if __name__ == "__main__":

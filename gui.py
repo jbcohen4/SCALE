@@ -1,10 +1,14 @@
 import tkinter as tk
+
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
 
+
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.ticker as ticker
 import numpy as np
+import pandas as pd
 
 import backend
 import exe_tools
@@ -46,6 +50,7 @@ def validate_numerical(value):
 
 
 def draw_graph():
+    global plot_data
     # get data from user
     Selected_Part = var1.get()
     Selected_Specification = var2.get()
@@ -55,22 +60,24 @@ def draw_graph():
     Fluence_Max = textbox_fluences_max.get()
     
     # validate data and put in default values as needed
-    Voltage = 5.0 if Voltage == "" else float(Voltage)
+    if Selected_Part == "AD590":
+        Voltage = 5.0 if Voltage == "" else float(Voltage)
+    else:
+        Voltage = 15.0 if Voltage == "" else float(Voltage)
     Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
-    # data = backend.generate_data_for_AD590(Voltage, Fluence_Min, Fluence_Max)
+
     data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
 
-    import pandas as pd
-    df = pd.DataFrame.from_dict(data, orient='index').transpose()
-    print(df)
+    plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
+    print(plot_data)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
 
 
-    
     graph_frame = create_frame(4, 0, "Graph", width=6, height=4)
+
     Chart_title = "Line Chart"
 
     fig, ax = plt.subplots()
@@ -79,6 +86,17 @@ def draw_graph():
     ax.set_xlabel(x_axis_name)
     ax.set_ylabel(y_axis_name)
     ax.set_title(Chart_title)
+
+    # Define a custom formatter function
+    def custom_formatter(x, pos):
+        if x == 1e11:  # Check if the tick is at 10^11
+            return 'pre_rad'
+        else:
+            return f'{x:.0e}'  # Default scientific notation
+
+    # Apply the custom formatter to the x-axis
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
+
     plt.subplots_adjust(left=0.2)
 
     # Embedding the plot in the Tkinter window
@@ -100,11 +118,31 @@ def clear_function():
         if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
             widget.destroy()
 
+
 # Fame 0
 frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
 asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
 asu_logo_resized = asu_logo.resize((96, 54), Image.LANCZOS)  
 asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
+
+# function to save the plot data to CSV file
+def save_plot_data():
+    global plot_data
+    if not plot_data.empty:
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="Save the plot data as CSV"
+        )
+        if filepath:
+            plot_data.to_csv(filepath, index=False)
+            print(f'Plot data saved to {filepath}')
+        else:
+            print('No file selected')
+    else:
+        print('No data to save')
+
+
 
 canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
 canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
@@ -209,8 +247,10 @@ button_border_width = 2
 execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
 execute_button.grid(row=0, column=1, padx=10, pady=10)
 
-save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+
+save_button = tk.Button(frame3, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 save_button.grid(row=1, column=1, padx=10, pady=10)
+
 
 clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 clear_button.grid(row=2, column=1, padx=10, pady=10)
