@@ -1,5 +1,8 @@
 import tkinter as tk
-from tkinter import LabelFrame, StringVar, OptionMenu, ttk, filedialog
+
+from tkinter import LabelFrame, StringVar, OptionMenu, ttk
+from PIL import Image, ImageTk
+
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -13,7 +16,6 @@ import exe_tools
 from constants import DROPDOWN_MAPPING
 INFINITY = float('inf') 
 
-
 # Create Window for GUI
 root = tk.Tk()
 
@@ -21,17 +23,17 @@ root = tk.Tk()
 root.title("Radiation on BJT explorer")
 
 # Set dimensions of the window
-root.geometry("800x750")
+root.geometry("700x800")
 
 # Set the background color of the root window
 
-root.configure(bg="cadetBlue4")
+root.configure(bg="white")
 
 
 # Adding frames for parts and specifications
-def create_frame(row, column, text, width=2, height=2):
-    frame = LabelFrame(root, text=text, padx=10, pady=10, borderwidth=2, relief="solid", width=width, height=height)
-    frame.grid(row=row, column=column, padx=10, pady=10, columnspan=width, rowspan=height, sticky="ewns")
+def create_frame(row, column, text, width=2, height=2, borderwidth = 2, bg = "white", padx=10, pady=10,highlightbackground="white", highlightthickness=0):
+    frame = LabelFrame(root, text=text, padx=10, pady=10, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg,highlightbackground=highlightbackground, highlightthickness=highlightthickness)
+    frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
 
     return frame
 
@@ -73,11 +75,13 @@ def draw_graph():
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
 
-    graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
+
+    graph_frame = create_frame(4, 0, "Graph", width=6, height=4)
+
     Chart_title = "Line Chart"
 
     fig, ax = plt.subplots()
-    ax.plot(xs, ys)
+    ax.plot(xs, ys, color = "maroon")
     ax.set_xscale('log') # Set the x-axis to log scale
     ax.set_xlabel(x_axis_name)
     ax.set_ylabel(y_axis_name)
@@ -114,6 +118,13 @@ def clear_function():
         if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
             widget.destroy()
 
+
+# Fame 0
+frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
+asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
+asu_logo_resized = asu_logo.resize((96, 54), Image.LANCZOS)  
+asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
+
 # function to save the plot data to CSV file
 def save_plot_data():
     global plot_data
@@ -132,10 +143,14 @@ def save_plot_data():
         print('No data to save')
 
 
-# Frame 1
-frame1 = create_frame(0, 0, "", width=2, height=2)
 
-label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bold")
+canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
+canvas.pack(anchor="nw", padx=2, pady=2)
+
+# Frame 1
+frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bold", bg="gold")
 label_Parts.grid(row=0, column=0, sticky="e")
 
 # Dropdown Parts
@@ -146,7 +161,7 @@ dropdown_part = OptionMenu(frame1, var1, *options_part)
 dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
 dropdown_part.config(bg="white")
 
-label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold")
+label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_Specifications.grid(row=1, column=0, sticky="e")
 
 # Dropdown Specifications
@@ -170,70 +185,75 @@ def update_dropdown_specifications(*args):
 # Trace changes in Dropdown 1 and update Dropdown 2 accordingly
 var1.trace_add('write', update_dropdown_specifications)
 
-label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold")
+label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset.grid(row=2, column=0, sticky="we")
 
-label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold")
+label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset_vcc.grid(row=3, column=0, sticky="e")
 
 # Text Entry for Dataset with border and padding
 validate_dataset_vcc = (root.register(validate_numerical), '%P')
-textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc)
+textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc,width=7)
 textbox_dataset_vcc.grid(row=3, column=1, sticky="w")
 
 # Frame 2
-frame2 = create_frame(0, 2, "", width=2, height=2)
+frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 
-label_temp = tk.Label(frame2, text="Temperature (C):", padx=5, pady=5, font="Arial 9 bold")
+label_temp = tk.Label(frame2, text="Temperature (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_temp.grid(row=0, column=0, sticky="e")
 
 # Text Entry for Temperature with border and padding
 validate_temp = (root.register(validate_numerical), '%P')
-textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp)
+textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp,width=10)
+textbox_temp.insert(0,"25")
 textbox_temp.grid(row=0, column=1, sticky="w")
 
-label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
 # Text Entry for Fluences Min with border and padding
 validate_fluences_min = (root.register(validate_numerical), '%P')
-textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min)
+textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min,width=10)
+textbox_fluences_min.insert(0,"4.04")
 textbox_fluences_min.grid(row=1, column=1, sticky="w")
-label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")
 
-label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
 # Text Entry for Fluences Max with border and padding
 validate_fluences_max = (root.register(validate_numerical), '%P')
-textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max)
+textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max, width=10)
+textbox_fluences_max.insert(0,"10")
 textbox_fluences_max.grid(row=2, column=1, sticky="w")
-label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range2.grid(row=2, column=2, sticky="e")
 
 # Frame 3
-frame3 = create_frame(0, 4, "", width=4)
+frame3 = create_frame(2, 4, "", width=4, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 # Button size
 button_width = 10
 button_height = 1
 
 # Button Design
-button_bg_color = "lightgray"
-button_fg_color = "black"
-button_border_color = "black"
+button_bg_color = "brown4"
+button_fg_color = "white"
+button_border_color = "white"
 button_border_width = 2
 
 #Buttons
 
-execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
-execute_button.grid(row=0, column=1, padx=5, pady=5)
+execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
+execute_button.grid(row=0, column=1, padx=10, pady=10)
 
-save_button = tk.Button(frame3, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
-save_button.grid(row=1, column=1, padx=5, pady=5)
 
-clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=button_border_width, relief="solid")
-clear_button.grid(row=2, column=1, padx=5, pady=5)
+save_button = tk.Button(frame3, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+save_button.grid(row=1, column=1, padx=10, pady=10)
+
+
+clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+clear_button.grid(row=2, column=1, padx=10, pady=10)
 
 
 
