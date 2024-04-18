@@ -1,0 +1,28 @@
+Title: LM193 / Prerad
+*************************************
+
+*Voltage Source
+VCC 5 0 DC 15V
+VEE 8 0 DC 0V
+
+VOUT 7 0 DC 5V
+
+*********************
+
+X1 5 8 1 2 3 LM193_sc
+RR3 3 7 5k
+
+RR1 1 6 0
+RR2 2 0 0
+VP 6 0 DC 0V
+
+*Input
+.dc VP -0.01 0.01 0.00001
+
+*Output
+.print dc format=noindex file={output_filename}
++ V(6)
++ V(3)
++ {(I(RR2)+I(RR1))/2}
++ {I(RR2)-I(RR1)}
+

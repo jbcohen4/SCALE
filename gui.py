@@ -1,12 +1,21 @@
-import subprocess
 import tkinter as tk
+
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
+from PIL import Image, ImageTk
+from tkinter import filedialog
+from tkinter import Label, LabelFrame, StringVar, OptionMenu, ttk, filedialog, PhotoImage
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.ticker as ticker
 import numpy as np
+import pandas as pd
 
-import csv
+import backend
+import exe_tools
+
+from constants import *
+INFINITY = float('inf') 
 
 # Create Window for GUI
 root = tk.Tk()
@@ -15,15 +24,17 @@ root = tk.Tk()
 root.title("Radiation on BJT explorer")
 
 # Set dimensions of the window
-root.geometry("800x750")
+root.geometry("700x800")
 
 # Set the background color of the root window
-root.configure(bg="darkgray")
+
+root.configure(bg="white")
+
 
 # Adding frames for parts and specifications
-def create_frame(row, column, text, width=2, height=2):
-    frame = LabelFrame(root, text=text, padx=10, pady=10, borderwidth=2, relief="solid", width=width, height=height)
-    frame.grid(row=row, column=column, padx=10, pady=10, columnspan=width, rowspan=height, sticky="ewns")
+def create_frame(row, column, text, width=2, height=2, borderwidth = 2, bg = "white", padx=10, pady=10,highlightbackground="white", highlightthickness=0):
+    frame = LabelFrame(root, text=text, padx=10, pady=10, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg,highlightbackground=highlightbackground, highlightthickness=highlightthickness)
+    frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
 
     return frame
 
@@ -37,69 +48,56 @@ def validate_numerical(value):
     except ValueError:
         return False
 
-# Backend function
-def execute_backend():
 
-    # proper variable names
+
+def draw_graph():
+    global plot_data
+    # get data from user
+    Selected_Part = var1.get()
+    Selected_Specification = var2.get()
     Voltage = textbox_dataset_vcc.get()
-    Temperature = textbox_temp.get()
+    Temperature = textbox_temp.get() # at the moment, the backend can't use this
     Fluence_Min = textbox_fluences_min.get()
     Fluence_Max = textbox_fluences_max.get()
-
-    # Write values to a file
-    with open('shared-config/shared_values.txt', 'w') as file:
-        file.write(f"Voltage: {Voltage}\n")
-        file.write(f"Temperature: {Temperature}\n")
-        file.write(f"Fluence Min: {Fluence_Min}\n")
-        file.write(f"Fluence Max: {Fluence_Max}\n")
-
-    # Build the command to run backend.py
-    command = ["python", "backend.py"]
-    # Run backend.py as a separate process
-    subprocess.run(command)
     
-    # Validate the input before converting to float
-    if Fluence_Min and Fluence_Max:
-        range_min = float(Fluence_Min) * 10**11
-        range_max = float(Fluence_Max)  * 10**13
-        print(range_min, range_max)
-        x_range_to_include = (range_min , range_max)
-        execute_function(sample_data, x_range_to_include)
+    # validate data and put in default values as needed
+    if Selected_Part == "AD590":
+        Voltage = 5.0 if Voltage == "" else float(Voltage)
     else:
-        execute_function(sample_data)
+        Voltage = 15.0 if Voltage == "" else float(Voltage)
+    Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
+    Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
 
-# Execute function
-def execute_function(sample_data, x_range=None):
+    data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
 
-    csv_file_path = 'output/fluences-vs-Iout.csv' 
-    with open(csv_file_path, 'r') as file:
-        csv_reader = csv.reader(file)
-        header_row = next(csv_reader)
-    
-        xs_column_name = header_row[0]
-        ys_column_name = header_row[1]
-        for row in csv_reader:
-            xs_value = float(row[0])
-            ys_value = float(row[1])
-            
-            if x_range is None or (x_range[0] <= xs_value <= x_range[1]):
-                sample_data['xs'].append(xs_value)
-                sample_data['ys'].append(ys_value)
+    plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
+    print(plot_data)
+    (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
+    xs = np.array(x_axis_data)
+    ys = np.array(y_axis_data)
 
-    # Frame 4 for graph
-    graph_frame = create_frame(2, 0, "Graph", width=6, height=4)
 
-    # Plotting the line chart
-    xs = np.array(sample_data['xs'])
-    ys = np.array(sample_data['ys'])
-    Chart_title = "Line Chart"
+    graph_frame = create_frame(4, 0, "Graph", width=6, height=4)
+
+    Chart_title = ""
 
     fig, ax = plt.subplots()
-    ax.plot(xs, ys)
+    ax.plot(xs, ys, color = "maroon")
     ax.set_xscale('log') # Set the x-axis to log scale
-    ax.set_xlabel(xs_column_name)
-    ax.set_ylabel(ys_column_name)
+    ax.set_xlabel(x_axis_name)
+    ax.set_ylabel(y_axis_name)
     ax.set_title(Chart_title)
+
+    # Define a custom formatter function
+    def custom_formatter(x, pos):
+        if x == 1e11:  # Check if the tick is at 10^11
+            return 'pre_rad'
+        else:
+            return f'{x:.0e}'  # Default scientific notation
+
+    # Apply the custom formatter to the x-axis
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
+
     plt.subplots_adjust(left=0.2)
 
     # Embedding the plot in the Tkinter window
@@ -116,104 +114,172 @@ def clear_function():
     textbox_fluences_max.delete(0, tk.END)
     print("Clear all the fields")
 
-    # Clear the graph
-    sample_data['xs'] = []
-    sample_data['ys'] = []
-
     # Find and destroy the existing graph frame
     for widget in root.winfo_children():
         if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
             widget.destroy()
 
 
-# Frame 1
-frame1 = create_frame(0, 0, "", width=2, height=2)
+# Fame 0
+frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
+asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
+asu_logo_resized = asu_logo.resize((96, 54), Image.LANCZOS)  
+asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
 
-label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bold")
+# function to save the plot data to CSV file
+def save_plot_data():
+    global plot_data
+    if not plot_data.empty:
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="Save the plot data as CSV"
+        )
+        if filepath:
+            plot_data.to_csv(filepath, index=False)
+            print(f'Plot data saved to {filepath}')
+        else:
+            print('No file selected')
+    else:
+        print('No data to save')
+
+
+
+canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
+canvas.pack(anchor="nw", padx=2, pady=2)
+
+# Frame 1
+frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 10 bold", bg="gold")
 label_Parts.grid(row=0, column=0, sticky="e")
 
 # Dropdown Parts
-options_part = ["AD590", "TL431", "TEMP0"]
+options_part = list(DROPDOWN_MAPPING.keys())
 var1 = StringVar()
 var1.set(options_part[0])
 dropdown_part = OptionMenu(frame1, var1, *options_part)
 dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+dropdown_part.config(bg="white")
 
-label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold")
+label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_Specifications.grid(row=1, column=0, sticky="e")
 
 # Dropdown Specifications
-options_specifications = ["I_out", "SPECIFICATION 01", "SPECIFICATION 02"]
+selected_part = options_part[0]
+options_specifications = DROPDOWN_MAPPING[selected_part]
 var2 = StringVar()
 var2.set(options_specifications[0])
 dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
 dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+dropdown_specifications.config(bg="white")
 
-label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold")
+# Function to update Specifications Dropdown based on Part Dropdown selection
+def update_dropdown_specifications(*args):
+    selected_part = var1.get()
+    options_specifications = DROPDOWN_MAPPING[selected_part]
+    dropdown_specifications['menu'].delete(0, 'end') 
+    for spec in options_specifications:
+        dropdown_specifications['menu'].add_command(label=spec, command=tk._setit(var2, spec))
+    var2.set(options_specifications[0])  # Set default value for var2
+
+# Trace changes in Dropdown 1 and update Dropdown 2 accordingly
+var1.trace_add('write', update_dropdown_specifications)
+
+label_dataset = tk.Label(frame1, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset.grid(row=2, column=0, sticky="we")
 
-label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold")
+label_dataset_vcc = tk.Label(frame1, text="VCC(0~25,step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset_vcc.grid(row=3, column=0, sticky="e")
+
+#set default voltage based on spec
+def update_default_voltage(*args):
+    if var1.get() == 'AD590':
+        default_voltage = "5"
+    else:
+        default_voltage = "15"
+    textbox_dataset_vcc.delete(0, 'end')  # Clear previous content
+    textbox_dataset_vcc.insert(0, default_voltage)
+
+# Whenever the spec changes, update the default voltage accordingly
+var1.trace_add('write', update_default_voltage)
+
+
 
 # Text Entry for Dataset with border and padding
 validate_dataset_vcc = (root.register(validate_numerical), '%P')
-textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc)
+textbox_dataset_vcc = ttk.Entry(frame1, style="TEntry", validate="key", validatecommand=validate_dataset_vcc,width=7)
+textbox_dataset_vcc.insert(0,"5")
 textbox_dataset_vcc.grid(row=3, column=1, sticky="w")
 
 # Frame 2
-frame2 = create_frame(0, 2, "", width=2, height=2)
+frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 
-label_temp = tk.Label(frame2, text="Temperature (C):", padx=5, pady=5, font="Arial 9 bold")
+label_temp = tk.Label(frame2, text="Temperature (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_temp.grid(row=0, column=0, sticky="e")
 
 # Text Entry for Temperature with border and padding
 validate_temp = (root.register(validate_numerical), '%P')
-textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp)
+textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp,width=10)
+textbox_temp.insert(0,"25")
 textbox_temp.grid(row=0, column=1, sticky="w")
 
-label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_min = tk.Label(frame2, text="Fluences Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
 # Text Entry for Fluences Min with border and padding
 validate_fluences_min = (root.register(validate_numerical), '%P')
-textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min)
+textbox_fluences_min = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_min,width=10)
+textbox_fluences_min.insert(0,"4.04")
 textbox_fluences_min.grid(row=1, column=1, sticky="w")
-label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range1 = tk.Label(frame2, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")
 
-label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_max = tk.Label(frame2, text="Fluences Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
 # Text Entry for Fluences Max with border and padding
 validate_fluences_max = (root.register(validate_numerical), '%P')
-textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max)
+textbox_fluences_max = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_fluences_max, width=10)
+textbox_fluences_max.insert(0,"10")
 textbox_fluences_max.grid(row=2, column=1, sticky="w")
-label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold")
+label_fluences_range2 = tk.Label(frame2, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range2.grid(row=2, column=2, sticky="e")
 
 # Frame 3
-frame3 = create_frame(0, 4, "", width=4)
+frame3 = create_frame(2, 4, "", width=4, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 # Button size
 button_width = 10
 button_height = 1
 
-# Sample data
-sample_data = {'xs': [], 'ys': []}
+# Button Design
+button_bg_color = "brown4"
+button_fg_color = "white"
+button_border_color = "white"
+button_border_width = 2
 
 #Buttons
-#execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_function(sample_data), width=button_width, height=button_height)
-execute_button = tk.Button(frame3, text="Execute", command=lambda: execute_backend(), width=button_width, height=button_height)
-execute_button.grid(row=0, column=1, padx=5, pady=5)
 
-change_scale_button = tk.Button(frame3, text="Change Scale", command="", width=button_width, height=button_height)
-change_scale_button.grid(row=2, column=1, padx=5, pady=5)
+execute_button = tk.Button(frame3, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
+execute_button.grid(row=0, column=1, padx=10, pady=10)
 
-save_button = tk.Button(frame3, text="Save", command="", width=button_width, height=button_height)
-save_button.grid(row=3, column=1, padx=5, pady=5)
 
-clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height)
-clear_button.grid(row=4, column=1, padx=5, pady=5)
+save_button = tk.Button(frame3, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+save_button.grid(row=1, column=1, padx=10, pady=10)
 
+
+clear_button = tk.Button(frame3, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+clear_button.grid(row=2, column=1, padx=10, pady=10)
+
+
+
+def on_closing():
+    """I was having issues with the application not closing all the way when I pressed the X button on the GUI.
+    This function fixed that."""
+    plt.close('all')  # Close all Matplotlib figures
+    root.destroy()  # Destroy the Tkinter window
+
+root.protocol("WM_DELETE_WINDOW", on_closing) # set the 'on_closing()' function to be called when you exit the program
 
 # Running the window
 root.mainloop()

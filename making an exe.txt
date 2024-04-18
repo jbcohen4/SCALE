@@ -1,0 +1,126 @@
+I'm trying to make dummy.py a standalone .exe. Right now the entire code is:
+```
+print('working')
+```
+I ran 'pyinstaller --onefile dummy.py' and I got a dummy.exe in the dist folder (win) and I got a dummy.spec (obvi)
+
+
+Left the .spec file totally alone but changed the print statement to print('working (2)'). Then I ran 'pyinstaller dummy.spec' and it worked.
+-   Worth noting: The .spec doesn't say anything about the onefile, so I don't know when that comes up.
+
+
+I changed the dummy.py file to try to read from an excel file like so
+```
+import pandas as pd
+import os, sys
+print('version 3')
+base_path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+print(f'base path: {base_path}')
+excel_path = os.path.join(base_path, 'excel-files/NPN_diode_parameters_V0.xlsx')
+df = pd.read_excel(excel_path)
+print(df.head())
+```
+
+However, I got the following error when I ran the .exe
+
+Traceback (most recent call last):
+  File "dummy.py", line 7, in <module>
+    df = pd.read_excel(excel_path)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas\io\excel\_base.py", line 504, in read_excel
+  File "pandas\io\excel\_base.py", line 1580, in __init__
+  File "pandas\io\excel\_openpyxl.py", line 552, in __init__
+  File "pandas\compat\_optional.py", line 135, in import_optional_dependency
+ImportError: Missing optional dependency 'openpyxl'.  Use pip or conda to install openpyxl.
+[2176] Failed to execute script 'dummy' due to unhandled exception!
+
+It's complaining about not having 'openpyxl'. 
+    I conda installed it, still didn't work. 
+    I added 'openpyxl' to the 'hiddenimports' of the dummy.spec file. Still didn't work.
+
+
+Since it looks like using excel files is causing problems, I'm going to use csv files instead
+I used the code
+```
+import pandas as pd
+import os, sys
+print('version 3')
+base_path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+print(f'base path: {base_path}')
+csv_path = os.path.join(base_path, 'csvs/dummy.csv')
+df = pd.read_csv(csv_path)
+print(df.head())
+```
+I added ('csvs/dummy.csv', 'csvs') to the datas section of the .spec file.
+
+This worked!
+
+
+
+
+I added a helper function to do the csv file reading. This code also worked
+```
+import pandas as pd
+import os, sys
+print('version 4')
+def read_csv_to_df(csv_path: str) -> pd.DataFrame:
+    """Works for both running as a python script and running as a .exe from pyinstaller"""
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+    return pd.read_csv(os.path.join(base_path, csv_path))
+df = read_csv_to_df("csvs/dummy.csv")
+print(df.head())
+```
+
+
+I changed up the dummy code so that it reads both data sets that it needs to.
+This also involved adding them to the dummy.spec file (the datas section)
+```
+import pandas as pd
+import os, sys
+print('version 5')
+def read_csv_to_df(csv_path: str) -> pd.DataFrame:
+    """Works for both running as a python script and running as a .exe from pyinstaller"""
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(__file__))
+    return pd.read_csv(os.path.join(base_path, csv_path))
+
+npn_df = read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
+print("read npn_df")
+print(npn_df.head())
+pnp_df = read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
+print("read pnp_df")
+print(pnp_df.head())
+```
+
+
+
+I moved the read_csv_to_df function into a seperate file, and I added the ability to read the netlist
+```
+import making_exe, serial_backend
+from pathlib import Path
+
+print('version 6')
+npn_df = making_exe.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
+print("read npn_df")
+print(npn_df.head())
+pnp_df = making_exe.read_csv_to_df('csvs/PNP_diode_parameters_V0.csv')
+print("read pnp_df")
+print(pnp_df.head())
+
+outfile = Path("tempfiles/t1.out")
+
+d = {
+    "output_filename": outfile,
+    "PNP_IS": 1,
+    "PNP_N": 2,
+    "NPN_IS": 3,
+    "NPN_N": 4
+}
+
+processed_text = serial_backend.process_file_with_replacements("netlists/AD590_template.cir", d)
+
+print('processed text:----------------------------------')
+print(processed_text)
+```
+This worked!
+
+

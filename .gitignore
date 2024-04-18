@@ -30,7 +30,6 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
 
 # Installer logs
 pip-log.txt
@@ -162,13 +161,15 @@ cython_debug/
 # don't track the xyce folder
 xyce/
 
-# don't track the temp files
-tempfiles/
 
-# don't track the output files
-output/
-
-
-# don't track any .spec or .exe
-*.spec
+# don't track any .exe
 *.exe
+
+
+# don't track all of the tempfiles, but do track the directory and subdirctories
+tempfiles/netlists/*
+!tempfiles/netlists/.gitkeep
+tempfiles/xyce_output/*
+!tempfiles/xyce_output/.gitkeep
+tempfiles/netlist.cir
+tempfiles/t1.out

@@ -1,0 +1,26 @@
+Title: LM741 AC gain testbench
+********************************
+
+*Input Voltage Source
+*********************
+VCC 8 0 DC 0V
+VEE 7 0 DC -15V
+*********************
+*Subcircuit
+*X1 26 22 27 28 25
+X1 6 7 1 2 3 LM741
+VVCC 8 6 0
+VIN1 1 0 {vos} ac 0.1
+VIN2 2 0 0
+
+
+
+
+*Input
+********
+.ac DEC 20 100 1MEG
+
+*Output
+.print ac format=noindex file={output_filename}
++ VDB(3)
+
