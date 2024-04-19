@@ -512,18 +512,18 @@ def generate_data_for_LM741_SLEW_RATE(voltage, fluences_min, fluences_max, speci
         assert False
 
 # Function to return the data to GUI 
-def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max):
+def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max):
     if Selected_Part == "AD590":
-        return generate_data_for_AD590(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
+        return generate_data_for_AD590(voltage=VCC, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
     elif Selected_Part == "LM741":
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:
-            return generate_data_for_LM741(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+            return generate_data_for_LM741(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification in ["Slew_rate", "Supply_current"]:
-            return generate_data_for_LM741_SLEW_RATE(voltage=Voltage, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+            return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
-        return generate_data_for_LM111(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        return generate_data_for_LM111(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM193":
-        return generate_data_for_LM193(voltage=Voltage, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        return generate_data_for_LM193(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     else:
         assert False
     pass

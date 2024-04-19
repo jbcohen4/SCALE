@@ -42,3 +42,6 @@ DROPDOWN_MAPPING = {
     "LM193" : ["V_os", "I_ib", "I_os"],
     "LM111" : ["V_os", "I_ib", "I_os"]
 }
+
+# List to store the types of Neutrons
+NEUTRON_TYPE = ["1MeV"]
