@@ -45,3 +45,26 @@ DROPDOWN_MAPPING = {
 
 # List to store the types of Neutrons
 NEUTRON_TYPE = ["1MeV"]
+
+
+# object to store values of the specifications for dotter plot
+DOTTER_SPECIFICATIONS = {
+    "AD590": {
+        "I_out": 0
+    },
+    "LM741": {
+        "V_os": 6,
+        "I_ib": 1.5,
+        "I_os": 200
+    },
+    "LM193": {
+        "V_os": 4,
+        "I_ib": 150,
+        "I_os": 20
+    },
+    "LM111": {
+        "V_os": 9,
+        "I_ib": 300,
+        "I_os": 100
+    }
+}

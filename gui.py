@@ -90,9 +90,16 @@ def draw_graph():
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
     
-
+    # Creatw new graph frame
     graph_frame = setup_graph()
     ax.plot(xs, ys, color = "maroon")
+
+    if Selected_Part in DOTTER_SPECIFICATIONS:
+        if Selected_Specification in DOTTER_SPECIFICATIONS[Selected_Part]:
+            dotted_line = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]
+            if dotted_line:
+                ax.axhline(y= dotted_line , color = "black", linestyle = "--")
+
     ax.set_xscale('log') # Set the x-axis to log scale
     ax.set_yscale(current_y_scale)  # Set the y-axis to current scale - which is linear in begining.
     ax.set_xlabel(x_axis_name)
