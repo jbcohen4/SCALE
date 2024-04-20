@@ -17,6 +17,10 @@ import exe_tools
 from constants import *
 INFINITY = float('inf') 
 
+# Global variables to keep track of the chart and axes
+global fig, ax, canvas, current_y_scale 
+current_y_scale = 'linear'
+
 # Create Window for GUI
 root = tk.Tk()
 
@@ -45,9 +49,21 @@ def validate_numerical(value):
     except ValueError:
         return False
 
+def setup_graph():
+    global fig, ax, canvas, current_y_scale
+  
+    graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
+    fig, ax = plt.subplots()
+    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+    canvas_widget = canvas.get_tk_widget()
+    canvas_widget.grid(row=0, column=2, sticky="nsew")
+    graph_frame.update_idletasks()
+    
+    return graph_frame
+
 def draw_graph():
-    global plot_data
-    # get data from user
+    global plot_data, fig, ax, canvas, current_y_scale
+    # get data from user inputs
     Selected_Part = var1.get()
     Selected_Specification = var2.get()
     VCC = textbox_dataset_vcc.get()
@@ -67,23 +83,20 @@ def draw_graph():
     Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
 
     data = backend.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
-
+    
     plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
     print(plot_data)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
+    
 
-    graph_frame = create_frame(4, 0, "Graph", width=8, height=4)
-
-    Chart_title = ""
-
-    fig, ax = plt.subplots()
+    graph_frame = setup_graph()
     ax.plot(xs, ys, color = "maroon")
     ax.set_xscale('log') # Set the x-axis to log scale
+    ax.set_yscale(current_y_scale)  # Set the y-axis to current scale - which is linear in begining.
     ax.set_xlabel(x_axis_name)
     ax.set_ylabel(y_axis_name)
-    ax.set_title(Chart_title)
 
     # Define a custom formatter function
     def custom_formatter(x, pos):
@@ -94,29 +107,16 @@ def draw_graph():
 
     # Apply the custom formatter to the x-axis
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
-
     plt.subplots_adjust(left=0.2)
+    canvas.draw_idle()
 
-    # Embedding the plot in the Tkinter window
-    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
-    canvas_widget = canvas.get_tk_widget()
-    canvas_widget.grid(row=0, column=0, sticky="nsew")
-    graph_frame.update_idletasks()
-
-# Clear function 
-def clear_function():
-    textbox_dataset_vcc.delete(0, tk.END)
-    textbox_dataset_vee.delete(0, tk.END)
-    textbox_temp.delete(0, tk.END)
-    textbox_fluences_min.delete(0, tk.END)
-    textbox_fluences_max.delete(0, tk.END)
-    print("Clear all the fields")
-
-    # Find and destroy the existing graph frame
-    for widget in root.winfo_children():
-        if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
-            widget.destroy()
-
+# Function to change the scale of the graph on y-axis
+def change_scale():
+    global fig, ax, canvas, current_y_scale
+    # Toggle between 'linear' and 'log'
+    current_y_scale = 'linear' if current_y_scale == 'log' else 'log'
+    ax.set_yscale(current_y_scale)
+    fig.canvas.draw_idle()
 
 # function to save the plot data to CSV file
 def save_plot_data():
@@ -135,6 +135,21 @@ def save_plot_data():
     else:
         print('No data to save')
 
+
+# Clear function 
+def clear_function():
+    # Clear text entries
+    textbox_dataset_vcc.delete(0, tk.END)
+    textbox_dataset_vee.delete(0, tk.END)
+    textbox_temp.delete(0, tk.END)
+    textbox_fluences_min.delete(0, tk.END)
+    textbox_fluences_max.delete(0, tk.END)
+    print("Clear all the fields")
+
+    # Find and destroy the existing graph frame
+    for widget in root.winfo_children():
+        if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+            widget.destroy()
 
 # Frame 0
 frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
@@ -285,17 +300,17 @@ button_border_color = "white"
 button_border_width = 2
 
 #Buttons
-execute_button2 = tk.Button(frame4, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
-execute_button2.grid(row=0, column=1, padx=10, pady=10)
+execute_button = tk.Button(frame4, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
+execute_button.grid(row=0, column=1, padx=10, pady=5)
 
+change_scale_button = tk.Button(frame4, text="Change Scale", command=change_scale, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+change_scale_button.grid(row=1, column=1, padx=10, pady=5)
 
-save_button2 = tk.Button(frame4, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
-save_button2.grid(row=1, column=1, padx=10, pady=10)
+save_button = tk.Button(frame4, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+save_button.grid(row=2, column=1, padx=10, pady=5)
 
-
-clear_button2 = tk.Button(frame4, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
-clear_button2.grid(row=2, column=1, padx=10, pady=10)
-
+clear_button = tk.Button(frame4, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+clear_button.grid(row=3, column=1, padx=10, pady=5)
 
 def on_closing():
     """I was having issues with the application not closing all the way when I pressed the X button on the GUI.
