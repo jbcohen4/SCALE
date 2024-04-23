@@ -54,7 +54,7 @@ DOTTER_SPECIFICATIONS = {
     },
     "LM741": {
         "V_os": 6,
-        "I_ib": 1.5,
+        "I_ib": 500,
         "I_os": 200
     },
     "LM193": {

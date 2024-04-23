@@ -75,7 +75,7 @@ def draw_graph():
     # validate data and put in default values as needed
     if Selected_Part == "AD590":
         VCC = 5.0 if VCC == "" else float(VCC)
-        VEE = -5.0 if VEE == "" else float(VEE)
+        VEE = None if VEE == "" else float(VEE)
     else:
         VCC = 15.0 if VCC == "" else float(VCC)
         VEE = -15.0 if VEE == "" else float(VEE)
@@ -215,17 +215,17 @@ label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
 #set default VCC & VEE based on spec
 def update_default_voltage(*args):
-    if var1.get() == 'AD590':
-        default_voltage = "5"
-    else:
-        default_voltage = "15"
-    textbox_dataset_vcc.delete(0, 'end')  # Clear previous content
+    textbox_dataset_vcc.delete(0, 'end')
     textbox_dataset_vee.delete(0, 'end')
     textbox_temp.delete(0, 'end')
     textbox_fluences_min.delete(0, 'end')
     textbox_fluences_max.delete(0, 'end')
+    if var1.get() == 'AD590':
+        default_voltage = "5"
+    else:
+        default_voltage = "15"
+        textbox_dataset_vee.insert(0, -1 * float(default_voltage))
     textbox_dataset_vcc.insert(0, float(default_voltage))
-    textbox_dataset_vee.insert(0, -1 * float(default_voltage))
     textbox_temp.insert(0, "25")
     textbox_fluences_min.insert(0, "4.04")
     textbox_fluences_max.insert(0, "10")
@@ -245,7 +245,6 @@ label_dataset_vee.grid(row=1, column=0,sticky="e")
 
 validate_dataset_vee = (root.register(validate_numerical), '%P')
 textbox_dataset_vee = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_dataset_vee,width=7)
-textbox_dataset_vee.insert(0,"-5")
 textbox_dataset_vee.grid(row=1, column=1, sticky="w")
 
 label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
