@@ -58,40 +58,6 @@ def run_command(command):
     # Return the standard output, standard error, and exit code from the command
     return result.stdout, result.stderr, result.returncode
 
-@DeprecationWarning # this guy really only makes sense for AD590 at the moment. We might want to delete it sometime. I don't know.
-def parse_output_data_2_rows(content: str) -> List[Tuple[float, float]]:
-    """This takes the content of a file that xyce wrote to and returns a list of tuples of the numbers it gave
-    Ex: if the content is
-            V(2)             I(VOUT)     
-                0.00000000e+00    7.88778843e-25
-                1.00000000e+00    9.66696441e-06
-                        ...(more rows)...
-                2.90000000e+01    2.99970895e-04
-                3.00000000e+01    3.00012198e-04
-            End of Xyce(TM) Simulation
-        
-    then this function will return
-        [
-            (0.0, 7.88778843e-25),
-            (1.0, 9.66696441e-06),
-                    ...
-            (29.0, 2.99970895e-04),
-            (30.0, 3.00012198e-04)
-        ]
-    """
-    # Regular expression to match lines with two floating-point numbers
-    pattern = r'\s*([\d\.\+\-eE]+)\s+([\d\.\+\-eE]+)'
-    
-    # Find all matches of the pattern
-    matches = re.findall(pattern, content)
-    
-    # Convert matches to tuples of floats
-    data_tuples = [(float(v1), float(v2)) for v1, v2 in matches]
-    
-    return data_tuples
-
-
-
 def parse_output_data_dynamic(content: str) -> List[Tuple[float, ...]]:
     """
     Parses the content of a file written by Xyce and returns a list of tuples with the numbers it contains.
@@ -200,10 +166,10 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
 
 
 
-def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: str):
+def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: str):
     subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM741_NETLIST
-    testbench = LM741_CLUDGE_TESTBENCH
+    testbench = process_string_with_replacements(LM741_CLUDGE_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     full_netlist = testbench + "\n" + subcircuit
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
@@ -215,7 +181,7 @@ def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: st
     set_fluence = 1e11
     for row in pre_rad_parsed_output:
         _, Vcc, _, V_os, I_ib, I_os = row
-        if Vcc == voltage:
+        if Vcc == VCC:
                 fluences.append(set_fluence)
                 v_oss.append(V_os * 10 ** 3) # volts to mV
                 i_ibs.append(I_ib * 10 ** 9) # amps to nA
@@ -227,14 +193,15 @@ def generate_data_for_LM741(voltage, fluence_min, fluence_max, specification: st
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
             _, Vcc, _, V_os, I_ib, I_os = row # the first _ is the idx. The second _ is V(3) in the xyce output. 
-            if Vcc == voltage:
+            if Vcc == VCC:
                 fluences.append(fluence)
                 v_oss.append(V_os * 10 ** 3) # volts to mV
                 i_ibs.append(I_ib * 10 ** 9) # amps to nA
                 i_oss.append(I_os * 10 ** 9) # amps to nA
                 break
         else: # google "python for else" if confused
-            assert False # The problem here is that we can't give them the voltage they asked for. We should do better than this
+            print(f"you asked for a Vcc of {VCC} but we can't give that to you right now.")
+            assert False # The problem here is that we can't give them the voltage they asked for. We should probably give them an error message instead of crashing.
     if specification == "V_os":
         return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_oss}
     elif specification == "I_ib":
@@ -355,66 +322,6 @@ def generate_data_for_LM193(voltage, fluence_min, fluence_max, specification: st
     else:
         assert False 
 
-def run_ACgain_on_xyce(vos:float, pnp_is: float, pnp_n: float, npn_is: float, npn_n: float, netlist: str) -> float:
-    netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
-    xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
-    try:
-        netlist_tempfile.close()
-        xyce_output_file.close()
-        temp_netlist_filename = netlist_tempfile.name
-        temp_xyce_output_filename = xyce_output_file.name
-        d = {
-            "vos": vos,
-            "output_filename": temp_xyce_output_filename,
-            "PNP_IS": pnp_is,
-            "PNP_N": pnp_n,
-            "NPN_IS": npn_is,
-            "NPN_N": npn_n
-        }
-
-        filled_in_netlist_str = process_string_with_replacements(netlist, d)
-        write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
-        cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
-        stdout, stderr, return_code = run_command(cmd_string)
-        out_text = read_file_as_string(temp_xyce_output_filename)
-        out_data = parse_output_data_2_rows(out_text)
-       
-        for freq, vdb in out_data:
-            if freq == 100:
-                return vdb
-        assert False
-    finally:
-        netlist_tempfile.close()
-        xyce_output_file.close()
-        os.remove(netlist_tempfile.name)
-        os.remove(xyce_output_file.name)
-
-def openLoopGain(vos_list):
-    testbench_string =  read_file_as_string(LM471_ACGAIN_TESTBENCH_PATH)
-    subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
-    full_netlist_template = testbench_string + "\n" + subcircuit_string 
-    npn_path = exe_tools.adjust_path('csvs/NPN_diode_parameters_V0.csv')
-    pnp_path = exe_tools.adjust_path('csvs/PNP_diode_parameters_V0.csv')
-    npn_df = pd.read_csv(npn_path)
-    pnp_df = pd.read_csv(pnp_path)
-    
-    for (idx_npn, row_npn),(idx_pnp, row_pnp), vos in zip(npn_df.iterrows(), pnp_df.iterrows(), vos_list):
-        avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
-        gain = run_ACgain_on_xyce(
-            vos = vos,
-            pnp_is=row_pnp['Is'],
-            pnp_n=row_pnp['n'],
-            npn_is=row_npn['Is'],
-            npn_n=row_npn['n'],
-            netlist = full_netlist_template
-            )
-        yield gain
-    pass
-    
-
-
-
-
 # Function to generate data from XYCE for LM741 Slew Rate & Supply Current
 # It uses a different netlist template for Slew Rate and Supply Current and gets different outputs where columns are 3 instead of 2.
 @lru_cache(maxsize=None)
@@ -489,8 +396,7 @@ def run_xyce_on_netlist_template_LM741_SLEW_RATE(netlist_template: str, desired_
 # Function to generate data for LM741 Slew Rate and Supply Current 
 # It uses a different netlist template slew rate and supply current and gets different outputs from xyce
 def generate_data_for_LM741_SLEW_RATE(voltage, fluences_min, fluences_max, specification: str):
-    testbench_path = SLEW_RATE_AND_SUPP_CURRENT_PATH
-    testbench_string = read_file_as_string(testbench_path)
+    testbench_string = SLEW_RATE_AND_SUPP_CURRENT
     subcircuit_string = read_file_as_string(LM741_NETLIST_PATH)
     full_netlist_template = testbench_string + "\n" + subcircuit_string
     xyce_output = run_xyce_on_netlist_template_LM741_SLEW_RATE(full_netlist_template, voltage, fluences_min, fluences_max)
@@ -517,7 +423,7 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
         return generate_data_for_AD590(voltage=VCC, fluences_min=Fluence_Min, fluences_max=Fluence_Max)
     elif Selected_Part == "LM741":
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:
-            return generate_data_for_LM741(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+            return generate_data_for_LM741(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification in ["Slew_rate", "Supply_current"]:
             return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
