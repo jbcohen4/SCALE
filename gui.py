@@ -230,7 +230,7 @@ def update_default_voltage(*args):
         textbox_dataset_vee.insert(0, -1 * float(default_voltage))
     textbox_dataset_vcc.insert(0, float(default_voltage))
     textbox_temp.insert(0, "25")
-    textbox_fluences_min.insert(0, "4.04")
+    textbox_fluences_min.insert(0, "4.03")
     textbox_fluences_max.insert(0, "10")
     
 
@@ -280,7 +280,7 @@ label_fluences_min.grid(row=1, column=0, sticky="e")
 # Text Entry for Fluences Min with border and padding
 validate_fluences_min = (root.register(validate_numerical), '%P')
 textbox_fluences_min = ttk.Entry(frame3, style="TEntry", validate="key", validatecommand=validate_fluences_min,width=10)
-textbox_fluences_min.insert(0,"4.04")
+textbox_fluences_min.insert(0,"4.03")
 textbox_fluences_min.grid(row=1, column=1, sticky="w")
 label_fluences_range1 = tk.Label(frame3, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")

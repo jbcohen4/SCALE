@@ -80,6 +80,20 @@ def parse_output_data_dynamic(content: str) -> List[Tuple[float, ...]]:
 
     return data_tuples
 
+def write_output_to_file(filename, content, index):
+    output_folder = "output/" 
+    output_file = output_folder + filename 
+    with open(output_file, 'a') as file:
+        file.write(f"Index: {index}\n")
+        file.write(content)
+        file.write("\n\n")
+
+def write_output_to_multiple_file(filename, content, index):
+    output_folder = "output/" 
+    output_file = output_folder + filename + str(index) + ".txt"
+    with open(output_file, 'w') as file:
+        file.write(content)
+
 @lru_cache
 def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]:
     assert "{output_filename}" in netlist_template
@@ -112,7 +126,7 @@ def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]
 def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
     """Returns an array of (float, str) tuples. The float represents the fluences of the run, the string is the data that xyce gave us back."""
     assert "{output_filename}" in netlist_template
-    def process_row(row_npn, row_pnp):
+    def process_row(row_npn, row_pnp, row_index):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
         netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
         xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
@@ -130,6 +144,10 @@ def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
             }
             filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
             write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+            
+            # For Debugging - in case netlist need to be printed and checked
+            # write_output_to_multiple_file("NETLIST_741_SLEW_RATE", filled_in_netlist_str, row_index)
+            
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
             out_text = read_file_as_string(temp_xyce_output_filename)
@@ -141,7 +159,7 @@ def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
                 os.remove(netlist_tempfile.name)
                 os.remove(xyce_output_file.name)
     with concurrent.futures.ThreadPoolExecutor() as ex:
-        tasks_args = [(row_npn, row_pnp) for (_, row_npn), (_, row_pnp) in zip(NPN_DF.iterrows(), PNP_DF.iterrows())]
+        tasks_args = [(row_npn, row_pnp, row_index) for row_index, ((_, row_npn), (_, row_pnp)) in enumerate(zip(NPN_DF.iterrows(), PNP_DF.iterrows()), start=1)]
         return list(ex.map(lambda args: process_row(*args), tasks_args))
 
 
@@ -239,11 +257,15 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
         t1 = t2 = prev_time = None
 
         for _, time, _, v_3, _ in pre_rad_parsed_output:
+            # if t1 is None and v_3 >= v1:
+            #     t1 = prev_time if prev_time is not None else time
+            # if t2 is None and v_3 >= v2:
+            #     t2 = prev_time if prev_time is not None else time
+            # prev_time = time
             if t1 is None and v_3 >= v1:
-                t1 = prev_time if prev_time is not None else time
+                    t1 = time
             if t2 is None and v_3 >= v2:
-                t2 = prev_time if prev_time is not None else time
-            prev_time = time
+                    t2 = time
 
             if t1 is not None and t2 is not None:
                 break
@@ -257,15 +279,21 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
 
     # process for post_rad
     flag = False
+    index = 1
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
+        # display values in console for first iteration only
         # if flag == False:
         #     print(out_text)
         #     flag = True
+        # DEBUG: Store the xyce output files in output folder
+        # write_output_to_file("post_rad_LM741_slew_rate.txt", out_text, index)
+
         parsed_output = parse_output_data_dynamic(out_text)
         if parsed_output:
             fluences.append(fluence)
             Supply_current.append(parsed_output[0][4] * 10 ** 6) # amps to µA
+            
             v3_values = [v_3 for _, _, _, v_3, _ in parsed_output]
             min_v3 = min(v3_values) 
             max_v3 = max(v3_values) 
@@ -277,11 +305,15 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
             t1 = t2 = prev_time = None
 
             for _, time, _, v_3, _ in parsed_output:
+                # if t1 is None and v_3 >= v1:
+                #     t1 = prev_time if prev_time is not None else time
+                # if t2 is None and v_3 >= v2:
+                #     t2 = prev_time if prev_time is not None else time
+                # prev_time = time
                 if t1 is None and v_3 >= v1:
-                    t1 = prev_time if prev_time is not None else time
+                    t1 = time
                 if t2 is None and v_3 >= v2:
-                    t2 = prev_time if prev_time is not None else time
-                prev_time = time
+                    t2 = time
 
                 if t1 is not None and t2 is not None:
                     break
@@ -291,7 +323,9 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
             else:
                 slew_rate = None      
             Slew_rate.append(slew_rate)
-            # print("v2-v1:", v2-v1, "t1:", t1, "t2:", t2, "slew_rate: ", slew_rate)
+            print(f"index: {index}, v1: {v1}, v2: {v2}, t1: {t1}, t2: {t2}, slew_rate: {slew_rate}\n")
+            index += 1
+
     if specification == "Slew_rate":
         return {'Fluences (n/cm^2)': fluences, 'Slew_rate (V/µs)': Slew_rate}
     elif specification == "Supply_current":

@@ -5,7 +5,7 @@ Title: LM741 /Slewrate / SupplyCurrent (A)
 *********************
 VCC 6 0 DC 15V
 VEE 7 0 DC -15V
-Vin 1 0 PULSE(0 1 5u 100p 100p 30u 60u)
+Vin 1 0 PULSE(0 1 1u 1p 1p 20u 40u)
 *********************
 *Subcircuit
 *X1 26 22 27 28 25
@@ -13,7 +13,7 @@ X1 6 7 1 3 3 LM741
 
 *Input
 ********
-.tran 1u 60u
+.tran 1n 60u
 .options timeint method=gear
 
 *Output
