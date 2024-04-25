@@ -24,7 +24,7 @@ root = tk.Tk()
 root.title("Radiation on BJT explorer")
 
 # Set dimensions of the window
-root.geometry("700x800")
+root.geometry("1000x800")
 
 # Set the background color of the root window
 
@@ -71,7 +71,8 @@ def draw_graph():
     data = backend.generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, Fluence_Max)
 
     plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
-    print(plot_data)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(plot_data)
     (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
@@ -148,6 +149,8 @@ def save_plot_data():
 canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
 canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
 canvas.pack(anchor="nw", padx=2, pady=2)
+# Set column 0 to expand
+root.grid_columnconfigure(0, weight=1)  
 
 # Frame 1
 frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
