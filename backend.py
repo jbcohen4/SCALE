@@ -420,7 +420,7 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:
             return generate_data_for_LM741(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification in ["Slew_rate", "Supply_current"]:
-            return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluences_min=Fluence_Min, fluences_max=Fluence_Max, specification=Selected_Specification)
+            return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
         return generate_data_for_LM111(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM193":
