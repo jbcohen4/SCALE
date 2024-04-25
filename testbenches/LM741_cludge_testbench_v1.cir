@@ -3,8 +3,8 @@ Title: LM741 Ios/Vos/Ib backup testbench
 
 *Input Voltage Source
 *********************
-VCC 6 0 DC 0V
-VEE 7 0 DC -15V
+VCC 6 0 DC {Vcc}V
+VEE 7 0 DC {Vee}V
 *********************
 *Subcircuit
 *X1 26 22 27 28 25

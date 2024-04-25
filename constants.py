@@ -22,12 +22,7 @@ LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_P
 LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad.cir")
 LM193_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Iib_Ios_testbench.cir")
 
-# below paths can be removed
-IOS_VOS_IB_1_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_1.cir")
-IOS_VOS_IB_2_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_2.cir")
-IOS_VOS_IB_3_PATH = exe_tools.adjust_path("testbenches/Ios_Vos_Ib_3.cir")
-LM471_ACGAIN_TESTBENCH_PATH = exe_tools.adjust_path("testbenches/LM741_ACgain_testbench.cir")
-SLEW_RATE_AND_SUPP_CURRENT_PATH = exe_tools.adjust_path("testbenches/Slew_rate_Supp_curr.cir")
+SLEW_RATE_AND_SUPP_CURRENT = exe_tools.read_txt_file("testbenches/Slew_rate_Supp_curr.cir")
 
 
 # NPN and PNP parameters as dataframes
