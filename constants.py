@@ -22,9 +22,6 @@ LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_P
 LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad.cir")
 LM193_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Iib_Ios_testbench.cir")
 
-SLEW_RATE_AND_SUPP_CURRENT = exe_tools.read_txt_file("testbenches/Slew_rate_Supp_curr.cir")
-
-
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
 PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
