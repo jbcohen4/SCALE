@@ -162,12 +162,13 @@ def clear_function():
 # Frame 0
 frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
 asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
-asu_logo_resized = asu_logo.resize((96, 54), Image.LANCZOS)  
+asu_logo_resized = asu_logo.resize((144, 81), Image.LANCZOS)  
 asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
 
 canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
 canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
-canvas.pack(anchor="nw", padx=2, pady=2)
+canvas.pack(anchor="n", padx=2, pady=2)
+
 # Set column 0 to expand
 root.grid_columnconfigure(0, weight=1)  
 
