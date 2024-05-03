@@ -1,4 +1,5 @@
 import tkinter as tk
+import threading
 
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
@@ -33,6 +34,18 @@ root.geometry("1000x800")
 # Set the background color of the root window
 root.configure(bg="white")
 
+# Custom style for the progress bar
+style = ttk.Style()
+style.theme_use('default')  
+
+# Custom style: style name as 'Maroon.Horizontal.TProgressbar' in frame 1
+style.configure('Maroon.Horizontal.TProgressbar', 
+                background='maroon',  
+                troughcolor='white',  
+                bordercolor='maroon',  
+                borderwidth = 2,
+                thickness=15)
+
 # Adding frames for parts and specifications
 def create_frame(row, column, text, width=2, height=2, borderwidth = 2, bg = "white", padx=10, pady=10,highlightbackground="white", highlightthickness=0):
     frame = LabelFrame(root, text=text, padx=padx, pady=pady, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg,highlightbackground=highlightbackground, highlightthickness=highlightthickness)
@@ -61,29 +74,42 @@ def setup_graph():
     
     return graph_frame
 
-def draw_graph():
-    global plot_data, fig, ax, canvas, current_y_scale
-    # get data from user inputs
-    Selected_Part = var1.get()
-    Selected_Specification = var2.get()
-    VCC = textbox_dataset_vcc.get()
-    VEE = textbox_dataset_vee.get()
-    Temperature = textbox_temp.get() # at the moment, the backend can't use this
-    Fluence_Min = textbox_fluences_min.get()
-    Fluence_Max = textbox_fluences_max.get()
-    
-    # validate data and put in default values as needed
-    if Selected_Part == "AD590":
-        VCC = 5.0 if VCC == "" else float(VCC)
-        VEE = None if VEE == "" else float(VEE)
-    else:
-        VCC = 15.0 if VCC == "" else float(VCC)
-        VEE = -15.0 if VEE == "" else float(VEE)
-    Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
-    Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
+# Function to get data from backend in a separate thread
+def generate_data_thread():
+    # show the progress bar
+    progress_bar.grid()  
+    progress_bar.start(10)  
 
-    data = backend.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
-    
+    try:
+        # get data from user inputs
+        Selected_Part = var1.get()
+        Selected_Specification = var2.get()
+        VCC = textbox_dataset_vcc.get()
+        VEE = textbox_dataset_vee.get()
+        Temperature = textbox_temp.get() # at the moment, the backend can't use this
+        Fluence_Min = textbox_fluences_min.get()
+        Fluence_Max = textbox_fluences_max.get()
+        
+        # validate data and put in default values as needed
+        if Selected_Part == "AD590":
+            VCC = 5.0 if VCC == "" else float(VCC)
+            VEE = None if VEE == "" else float(VEE)
+        else:
+            VCC = 15.0 if VCC == "" else float(VCC)
+            VEE = -15.0 if VEE == "" else float(VEE)
+        Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
+        Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
+
+        data = backend.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
+        root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        root.after(0,stop_progress_bar)
+
+# Function to draw the graph with new data
+def draw_graph(data, Selected_Part, Selected_Specification):
+    global plot_data,fig, ax, canvas, current_y_scale
+
     plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(plot_data)
@@ -91,7 +117,7 @@ def draw_graph():
     xs = np.array(x_axis_data)
     ys = np.array(y_axis_data)
     
-    # Creatw new graph frame
+    # Create new graph frame
     graph_frame = setup_graph()
     ax.plot(xs, ys, color = "maroon")
 
@@ -117,6 +143,12 @@ def draw_graph():
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
     plt.subplots_adjust(left=0.2)
     canvas.draw_idle()
+    stop_progress_bar()
+
+# Function to stop the progress bar
+def stop_progress_bar():
+    progress_bar.stop()
+    progress_bar.grid_remove()
 
 # Function to change the scale of the graph on y-axis
 def change_scale():
@@ -208,6 +240,11 @@ def update_dropdown_specifications(*args):
 
 # Trace changes in Dropdown 1 and update Dropdown 2 accordingly
 var1.trace_add('write', update_dropdown_specifications)
+
+# Progress Bar
+progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
+progress_bar.grid(row=2, column=1, padx=2, pady=2)
+progress_bar.grid_remove()
 
 # Frame 2
 frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
@@ -310,7 +347,7 @@ button_border_color = "white"
 button_border_width = 2
 
 #Buttons
-execute_button = tk.Button(frame4, text="Execute", command=draw_graph, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0 , relief="solid")
+execute_button = tk.Button(frame4, text="Execute", command=lambda: threading.Thread(target=generate_data_thread, daemon=True).start(), width=10, height=1, bg="brown4", fg="white", bd=0, relief="solid")
 execute_button.grid(row=0, column=1, padx=10, pady=5)
 
 change_scale_button = tk.Button(frame4, text="Change Scale", command=change_scale, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
@@ -321,6 +358,7 @@ save_button.grid(row=2, column=1, padx=10, pady=5)
 
 clear_button = tk.Button(frame4, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 clear_button.grid(row=3, column=1, padx=10, pady=5)
+
 
 def on_closing():
     """I was having issues with the application not closing all the way when I pressed the X button on the GUI.
