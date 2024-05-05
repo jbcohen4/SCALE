@@ -1,0 +1,23 @@
+Title: PNP diode modifier
+********************************
+
+*Input Voltage Source
+*********************
+VCC 1 0 DC 0
+D1 1 0 DMODPNP 1 temp=25
+
+*Input
+********
+.dc VCC 0 1 0.01
+
+*Output
+.print dc format=noindex file={output_filename}
++ V(1)
++ I(D1)
+
+
+.model DMODPNP D (IS ={PNP_IS1}
++ N ={PNP_N1})
+
+*end of the netlist
+.end

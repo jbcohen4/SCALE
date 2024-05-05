@@ -1,0 +1,27 @@
+Title: NPN diode modifier
+********************************
+
+*Input Voltage Source
+*********************
+VCC 1 0 DC 0
+D1 1 0 DMODNPN1 1 temp=25
+D2 1 0 DMODNPN2 1 temp=25
+
+*Input
+********
+.dc VCC 0 1 0.01
+
+*Output
+.print dc format=noindex file=noindex file={output_filename}
++ V(1)
++ {I(D1)+I(D2)}
+
+
+.model DMODNPN1 D (IS = {NPN_IS1}
++ N ={NPN_N1})
+
+.model DMODNPN2 D (IS = {NPN_IS2}
++ N = {NPN_N2})
+
+*end of the netlist
+.end

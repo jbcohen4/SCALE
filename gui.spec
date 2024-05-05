@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
 
-    datas=[('csvs/*', 'csvs'), ('netlists/AD590_template.cir', 'netlists'), ('xyce/*', 'xyce'),('images/ASU_logo.png', 'images')],
+    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'),('testbenches/*', 'testbenches'), ('xyce/*', 'xyce'),('images/ASU_logo.png', 'images')],
 
     hiddenimports=[],
     hookspath=[],

@@ -163,6 +163,7 @@ def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
                 "NPN_N": row_npn['n']
             }
             filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+            breakpoint()
             write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
@@ -514,7 +515,7 @@ def generate_data(Selected_Part, Selected_Specification, Voltage, Fluence_Min, F
     pass
 
 def main():
-    pass
+     generate_data_for_AD590(voltage=15, fluences_min=-inf, fluences_max=inf)
 
 if __name__ == "__main__":
     main()
