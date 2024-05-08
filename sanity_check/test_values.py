@@ -4,7 +4,7 @@ from pathlib import Path
 import re, tempfile, os
 import pandas as pd
 import sys
-sys.path.append(r'C:\Users\elise\SCALE')
+sys.path.append(r'C:\Users\elisemacabou\SCALE-1')
 from constants import * 
 import concurrent.futures
 import numpy as np
@@ -73,11 +73,13 @@ def get_all_xyce_output_1_diode_txt(netlist_template_path: str, fluence, diode:s
         xyce_output_file.close()
         temp_netlist_filename = netlist_tempfile.name
         temp_xyce_output_filename = xyce_output_file.name
+        name = "{:.0e}".format(fluence)
+        name = name.replace('+','')
         if diode == 'PNP':
             DF = PNP_DF
         else: DF = NPN_DF 
         d = {
-                "output_filename": f'outputs/{diode}_1e13_{number}.txt',
+                "output_filename": f'MATLAB/{diode}_{name}_{number}.txt',
                 f"{diode}_IS1": DF[DF["fluences (n/cm^2)"] == fluence][f'Is_{number}'].values[0],
                 f"{diode}_N1": DF[DF["fluences (n/cm^2)"] == fluence][f'n_{number}'].values[0],
             }
@@ -105,11 +107,14 @@ def get_all_xyce_output_2_diodes_txt(netlist_template_path: str, fluence, diode:
         xyce_output_file.close()
         temp_netlist_filename = netlist_tempfile.name
         temp_xyce_output_filename = xyce_output_file.name
+        name = "{:.0e}".format(fluence)
+        name = name.replace('+','')
+
         if diode == 'PNP':
             DF = PNP_DF
         else: DF = NPN_DF 
         d = {
-                "output_filename": f'outputs/{diode}_1e13.txt',
+                "output_filename": f'MATLAB/{diode}_{name}.txt',
                 f"{diode}_IS1": DF[DF["fluences (n/cm^2)"] == fluence]['Is_1'].values[0],
                 f"{diode}_N1": DF[DF["fluences (n/cm^2)"] == fluence]['n_1'].values[0],
                 f"{diode}_IS2": DF[DF["fluences (n/cm^2)"] == fluence]['Is_2'].values[0],
@@ -120,7 +125,7 @@ def get_all_xyce_output_2_diodes_txt(netlist_template_path: str, fluence, diode:
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        
+        print(out_text)
     finally:
         netlist_tempfile.close()
         xyce_output_file.close()
@@ -130,10 +135,8 @@ def get_all_xyce_output_2_diodes_txt(netlist_template_path: str, fluence, diode:
 
 
 def main():
-    # fluences_pnp = [403702000000,1000000000000,4037020000000,10000000000000,40370200000000]
-    # fluences_npn = [404000000000,1000000000000,4040000000000,10000000000000,40400000000000]
-    fluences_pnp = [10000000000000]
-    fluences_npn = [10000000000000]
+    fluences_pnp = [403702000000,1000000000000,4037020000000,10000000000000,40370200000000]
+    fluences_npn = [404000000000,1000000000000,4040000000000,10000000000000,40400000000000]
     for fluence_pnp,fluence_npn in zip(fluences_pnp, fluences_npn):
         get_all_xyce_output_2_diodes_txt('netlists/PNP_2diode_sanity_check.txt', fluence_pnp,"PNP")
         get_all_xyce_output_2_diodes_txt('netlists/NPN_2diode_sanity_check.txt', fluence_npn,"NPN")
