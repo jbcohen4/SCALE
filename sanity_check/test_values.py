@@ -4,12 +4,14 @@ from pathlib import Path
 import re, tempfile, os
 import pandas as pd
 import sys
-sys.path.append(r'C:\Users\elisemacabou\SCALE-1')
-from constants import * 
 import concurrent.futures
 import numpy as np
 from functools import lru_cache
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+from constants import * 
 
 inf = float('inf')
 
@@ -109,7 +111,6 @@ def get_all_xyce_output_2_diodes_txt(netlist_template_path: str, fluence, diode:
         temp_xyce_output_filename = xyce_output_file.name
         name = "{:.0e}".format(fluence)
         name = name.replace('+','')
-
         if diode == 'PNP':
             DF = PNP_DF
         else: DF = NPN_DF 
