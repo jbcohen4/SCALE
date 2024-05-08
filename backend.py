@@ -7,7 +7,7 @@ from constants import *
 import concurrent.futures
 import numpy as np
 from functools import lru_cache
-
+import ast 
 
 inf = float('inf')
 
@@ -95,7 +95,7 @@ def write_output_to_multiple_file(filename, content, index):
         file.write(content)
 
 @lru_cache
-def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]:
+def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[Tuple[float, str]]:
     assert "{output_filename}" in netlist_template
     netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
     xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
@@ -107,6 +107,9 @@ def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]
         d = {
             "output_filename": temp_xyce_output_filename
         }
+        if vos != 0.0:
+            d["Vos"] = vos
+
         filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
         write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
@@ -123,10 +126,10 @@ def get_pre_rad_xyce_output_txt(netlist_template:str) -> List[Tuple[float, str]]
 
 @lru_cache # all subcircuits + testbenches + specifications should use this. It's super general and works great.
 # We'll have to modify it a little bit to deal with AC gain. That's cool. We will do that.
-def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
+def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = None) -> List[Tuple[float, str]]:
     """Returns an array of (float, str) tuples. The float represents the fluences of the run, the string is the data that xyce gave us back."""
     assert "{output_filename}" in netlist_template
-    def process_row(row_npn, row_pnp, row_index):
+    def process_row(row_npn, row_pnp, row_index, vos=None):
         avg_fluences = (row_npn['fluences (n/cm^2)'] + row_pnp['fluences (n/cm^2)']) / 2
         netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
         xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
@@ -142,6 +145,8 @@ def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
                 "NPN_IS": row_npn['Is'],
                 "NPN_N": row_npn['n']
             }
+            if vos is not None:  # Add vos to the dictionary only if vos_list is not None
+                d["Vos"] = round(vos,3)
             filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
             write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
             
@@ -158,10 +163,22 @@ def get_all_xyce_output_txt(netlist_template: str) -> List[Tuple[float, str]]:
                 xyce_output_file.close()
                 os.remove(netlist_tempfile.name)
                 os.remove(xyce_output_file.name)
+    
     with concurrent.futures.ThreadPoolExecutor() as ex:
-        tasks_args = [(row_npn, row_pnp, row_index) for row_index, ((_, row_npn), (_, row_pnp)) in enumerate(zip(NPN_DF.iterrows(), PNP_DF.iterrows()), start=1)]
-        return list(ex.map(lambda args: process_row(*args), tasks_args))
-
+        if Vos_values is not None and Vos_values:
+            # Create task arguments with vos
+            all_task_args = [
+                (row_npn, row_pnp, row_index, vos)
+                for row_index, ((_, row_npn), (_, row_pnp), vos) in enumerate(zip(NPN_DF.iterrows(), PNP_DF.iterrows(), Vos_values), start=1)]
+        else:
+            # If vos_list is None or empty, use None for Vos
+            all_task_args = [
+                (row_npn, row_pnp, row_index, None)
+                for row_index, ((_, row_npn), (_, row_pnp)) in enumerate(zip(NPN_DF.iterrows(), PNP_DF.iterrows()), start=1)
+            ]
+        # Execute the tasks
+        results = list(ex.map(lambda args: process_row(*args), all_task_args))
+        return results
 
 
 def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
@@ -181,7 +198,6 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
         'Fluences (n/cm^2)': xs,
         'I_out (µA)': ys
     }
-
 
 def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: str):
     subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
@@ -301,6 +317,7 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
 
             v1 = (delta_v3 * 0.1) + min_v3 
             v2 = (delta_v3 * 0.8) + min_v3 
+            # we gonna take 0.4 to 0.6 for next work, as we need to work on the tighter range
 
             t1 = t2 = prev_time = None
 
@@ -333,6 +350,45 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
     else:
         assert False
 
+def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specification: str):
+    subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit = LM741_SUBCKT_POST_RAD_TEMPLATE
+    testbench = process_string_with_replacements(LM741_AC_GAIN_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    full_netlist = testbench + "\n" + subcircuit
+    
+    # Get Vos values for ac gain calculation
+    Vos_data = generate_data_for_LM741(VCC=VCC, VEE=VEE, fluence_min=fluence_min, fluence_max=fluence_max, specification="V_os")
+    Vos_values = Vos_data["V_os (mV)"]
+    
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist, round(Vos_values[0],3))
+    # print(f"xyce_output_pre_rad: {xyce_output_pre_rad}")
+
+    # passing vos_values as tuple as lists are not hashable and it need to be used as keys 
+    all_xyce_output = get_all_xyce_output_txt(full_netlist, tuple(Vos_values[1:]))
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, Ac_gain = [], []
+
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    # we just need the fisrt row from Xyce output to calculate the Ac gain
+    fluences.append(set_fluence)
+    _, freq, re_v3, im_v3, re_v2, im_v2 = pre_rad_parsed_output[0]
+    Ac_gain.append((np.sqrt((re_v3**2 + im_v3**2) / (re_v2**2 + im_v2**2)))/1000)
+
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        _,freq, re_v3, im_v3, re_v2, im_v2 = parsed_output[0]
+        fluences.append(fluence)
+        Ac_gain.append((np.sqrt((re_v3**2 + im_v3**2) / (re_v2**2 + im_v2**2)))/1000)
+    
+    if specification == "Ac_gain":
+        return {'Fluences (n/cm^2)': fluences, 'Ac_gain (mV)': Ac_gain}
+    else:
+        assert False
 
 def generate_data_for_LM111(voltage, fluence_min, fluence_max, specification: str):
     print("generate_data_for_LM111")
@@ -455,6 +511,8 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
             return generate_data_for_LM741(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification in ["Slew_rate", "Supply_current"]:
             return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        elif Selected_Specification == "Ac_gain":
+            return generate_data_for_LM741_AC_GAIN(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
         return generate_data_for_LM111(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM193":

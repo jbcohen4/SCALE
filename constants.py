@@ -11,6 +11,7 @@ LM741_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_subckt_P
 #testbenches for the LM741
 LM741_CLUDGE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_cludge_testbench_v1.cir")
 LM741_SLEW_RATE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_slewrate_tb_v1.cir")
+LM741_AC_GAIN_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_AC_Gain_testbench.cir")
 
 # paths for LM111
 LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad.cir")
@@ -29,7 +30,7 @@ PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
-    "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current"],
+    "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain"],
     "LM193" : ["V_os", "I_ib", "I_os"],
     "LM111" : ["V_os", "I_ib", "I_os"]
 }
@@ -48,7 +49,8 @@ DOTTER_SPECIFICATIONS = {
         "I_ib": 500,
         "I_os": 200,
         "Slew_rate": 0,
-        "Supply_current": 0
+        "Supply_current": 0,
+        "Ac_gain": 36
     },
     "LM193": {
         "V_os": 4,

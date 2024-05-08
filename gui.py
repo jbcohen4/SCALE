@@ -109,7 +109,11 @@ def generate_data_thread():
 # Function to draw the graph with new data
 def draw_graph(data, Selected_Part, Selected_Specification):
     global plot_data,fig, ax, canvas, current_y_scale
-
+    
+    if not data or all(not v for v in data.values()):
+        print("No data available to plot.")
+        return 
+    
     plot_data = pd.DataFrame.from_dict(data, orient='index').transpose()
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(plot_data)

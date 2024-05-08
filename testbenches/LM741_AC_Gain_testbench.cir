@@ -1,0 +1,23 @@
+Title: LM741 AC Gain
+********************************
+
+*Input Voltage Source
+*********************
+VCC 6 0 DC {Vcc}V
+VEE 7 0 DC {Vee}V
+Vin 1 0 DC -{Vos}mV
+VinAC 2 1 AC 0.1mV 0
+*********************
+*Subcircuit
+*X1 26 22 27 28 25
+X1 6 7 2 0 3 LM741
+
+*Input
+********
+.AC DEC 100 1 10MEG
+
+*Output
+.print AC format=noindex file={output_filename}
++ V(3)
++ V(2)
+
