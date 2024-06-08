@@ -112,6 +112,7 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
 
         filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
         write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+        # print(filled_in_netlist_str)
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
@@ -214,7 +215,7 @@ def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: s
     set_fluence = 1e11
     for row in pre_rad_parsed_output:
         _, Vcc, _, V_os, I_ib, I_os = row
-        if Vcc == 0:
+        if Vcc == 15:
                 fluences.append(set_fluence)
                 v_oss.append(V_os * 10 ** 3) # volts to mV
                 i_ibs.append(I_ib * 10 ** 9) # amps to nA
@@ -267,8 +268,8 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
         max_v3 = max(v3_values)
         delta_v3 = max_v3 - min_v3
 
-        v1 = (delta_v3 * 0.1) + min_v3
-        v2 = (delta_v3 * 0.8) + min_v3
+        v1 = (delta_v3 * 0.4) + min_v3
+        v2 = (delta_v3 * 0.6) + min_v3
 
         t1 = t2 = prev_time = None
 
@@ -315,8 +316,8 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
             max_v3 = max(v3_values) 
             delta_v3 = max_v3 - min_v3 
 
-            v1 = (delta_v3 * 0.1) + min_v3 
-            v2 = (delta_v3 * 0.8) + min_v3 
+            v1 = (delta_v3 * 0.4) + min_v3 
+            v2 = (delta_v3 * 0.6) + min_v3 
             # we gonna take 0.4 to 0.6 for next work, as we need to work on the tighter range
 
             t1 = t2 = prev_time = None
@@ -360,7 +361,6 @@ def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specific
     # Get Vos values for ac gain calculation
     Vos_data = generate_data_for_LM741(VCC=VCC, VEE=VEE, fluence_min=fluence_min, fluence_max=fluence_max, specification="V_os")
     Vos_values = Vos_data["V_os (mV)"]
-    
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist, round(Vos_values[0],3))
     # print(f"xyce_output_pre_rad: {xyce_output_pre_rad}")
 
@@ -375,6 +375,7 @@ def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specific
     # we just need the fisrt row from Xyce output to calculate the Ac gain
     fluences.append(set_fluence)
     _, freq, re_v3, im_v3, re_v2, im_v2 = pre_rad_parsed_output[0]
+    # print(re_v3, im_v3, re_v2, im_v2)
     Ac_gain.append((np.sqrt((re_v3**2 + im_v3**2) / (re_v2**2 + im_v2**2)))/1000)
 
     # process for post_rad
@@ -387,6 +388,41 @@ def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specific
     
     if specification == "Ac_gain":
         return {'Fluences (n/cm^2)': fluences, 'Ac_gain (mV)': Ac_gain}
+    else:
+        assert False
+
+def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specification: str):
+    subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit = LM741_SUBCKT_POST_RAD_TEMPLATE
+    testbench = process_string_with_replacements(LM741_CMRR_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    full_netlist = testbench + "\n" + subcircuit
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, cmrr = [], []
+
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    # we just need the fisrt row from Xyce output to calculate the CMRR
+    fluences.append(set_fluence)
+    _, freq, re_v3, im_v3, re_v4, im_v4 = pre_rad_parsed_output[0]
+    print(re_v3, im_v3, re_v4, im_v4)
+    const_val = 6.02059
+    cmrr.append(const_val - np.log10(abs(np.sqrt(re_v3**2 + im_v3**2))))
+
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        _,freq, re_v3, im_v3, re_v4, im_v4 = parsed_output[0]
+        fluences.append(fluence)
+        cmrr.append(const_val - np.log10(abs(np.sqrt(re_v3**2 + im_v3**2))))
+    
+    if specification == "CMRR":
+        return {'Fluences (n/cm^2)': fluences, 'CMRR_db': cmrr}
     else:
         assert False
 
@@ -513,6 +549,8 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
             return generate_data_for_LM741_SLEW_RATE(VCC=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification == "Ac_gain":
             return generate_data_for_LM741_AC_GAIN(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        elif Selected_Specification == "CMRR":
+            return generate_data_for_LM741_CMRR(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
         return generate_data_for_LM111(voltage=VCC, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM193":

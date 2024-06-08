@@ -1,0 +1,29 @@
+Title: LM741 AC CMRR
+********************************
+
+*Input Voltage Source
+*********************
+VCC 6 0 DC {Vcc}V
+VEE 7 0 DC {Vee}V
+VinAC 4 0 AC 1V 0
+
+*Resistors
+*********************
+RA 1 0 100k
+RB 4 1 100k
+RC 4 2 100k
+RD 3 2 100k
+
+*Subcircuit
+*********************
+*X1 26 22 27 28 25
+X1 6 7 1 2 3 LM741
+
+*Input
+********
+.AC DEC 10 1 10MEG
+
+*Output
+.print AC format=noindex file={output_filename}
++ V(3)
++ V(4)
