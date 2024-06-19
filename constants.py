@@ -41,27 +41,52 @@ NEUTRON_TYPE = ["1MeV"]
 
 
 # object to store values of the specifications for dotter plot
+# DOTTER_SPECIFICATIONS = {
+#     "AD590": {
+#         "I_out": 0
+#     },
+#     "LM741": {
+#         "V_os": 6,
+#         "I_ib": 500,
+#         "I_os": 20,
+#         "Slew_rate": 0,
+#         "Supply_current": 0,
+#         "Ac_gain": 36,
+#         "CMRR": 70
+#     },
+#     "LM193": {
+#         "V_os": 4,
+#         "I_ib": 150,
+#         "I_os": 20
+#     },
+#     "LM111": {
+#         "V_os": 9,
+#         "I_ib": 300,
+#         "I_os": 100
+#     }
+# }
+
 DOTTER_SPECIFICATIONS = {
     "AD590": {
-        "I_out": 0
+        "I_out": {"min": 0, "typical": 0, "max": 0}
     },
     "LM741": {
-        "V_os": 6,
-        "I_ib": 500,
-        "I_os": 20,
-        "Slew_rate": 0,
-        "Supply_current": 0,
-        "Ac_gain": 36,
-        "CMRR": 0
+        "V_os": {"min": 0, "typical": 1, "max": 6},
+        "I_ib": {"min": 0, "typical": 85, "max": 500},
+        "I_os": {"min": 0, "typical": 80, "max": 20},
+        "Slew_rate": {"min": 0, "typical": 0, "max": 0},
+        "Supply_current": {"min": 0, "typical": 0, "max": 0},
+        "Ac_gain": {"min": 0, "typical": 0, "max": 36},
+        "CMRR": {"min": 80, "typical": 95, "max": 0}
     },
     "LM193": {
-        "V_os": 4,
-        "I_ib": 150,
-        "I_os": 20
+        "V_os": {"min": 0, "typical": 2, "max": 4},
+        "I_ib": {"min": 0, "typical": 75, "max": 150},
+        "I_os": {"min": 0, "typical": 10, "max": 20}
     },
     "LM111": {
-        "V_os": 9,
-        "I_ib": 300,
-        "I_os": 100
+        "V_os": {"min": 0, "typical": 5, "max": 9},
+        "I_ib": {"min": 0, "typical": 150, "max": 300},
+        "I_os": {"min": 0, "typical": 50, "max": 100}
     }
 }

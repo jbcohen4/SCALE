@@ -79,6 +79,7 @@ def generate_data_thread():
     # show the progress bar
     progress_bar.grid()  
     progress_bar.start(10)  
+    progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="e")
 
     try:
         # get data from user inputs
@@ -127,9 +128,18 @@ def draw_graph(data, Selected_Part, Selected_Specification):
 
     if Selected_Part in DOTTER_SPECIFICATIONS:
         if Selected_Specification in DOTTER_SPECIFICATIONS[Selected_Part]:
-            dotted_line = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]
-            if dotted_line:
-                ax.axhline(y= dotted_line , color = "black", linestyle = "--")
+            dotted_line_min = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["min"]
+            dotted_line_typical = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["typical"]
+            dotted_line_max = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["max"]
+            if dotted_line_min:
+                ax.axhline(y= dotted_line_min , color = "black", linestyle = "--")
+                ax.text(1.02, dotted_line_min, f"min: {dotted_line_min}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
+            if dotted_line_typical:
+                ax.axhline(y= dotted_line_typical , color = "black", linestyle = "--")
+                ax.text(1.02, dotted_line_typical, f"typ: {dotted_line_typical}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
+            if dotted_line_max:
+                ax.axhline(y= dotted_line_max , color = "black", linestyle = "--")
+                ax.text(1.02, dotted_line_max, f"max: {dotted_line_max}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
 
     ax.set_xscale('log') # Set the x-axis to log scale
     ax.set_yscale(current_y_scale)  # Set the y-axis to current scale - which is linear in begining.
@@ -153,6 +163,7 @@ def draw_graph(data, Selected_Part, Selected_Specification):
 def stop_progress_bar():
     progress_bar.stop()
     progress_bar.grid_remove()
+    progress_label.grid_remove() 
 
 # Function to change the scale of the graph on y-axis
 def change_scale():
@@ -249,6 +260,11 @@ var1.trace_add('write', update_dropdown_specifications)
 progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
 progress_bar.grid(row=2, column=1, padx=2, pady=2)
 progress_bar.grid_remove()
+
+# Progress bar label 
+progress_label = tk.Label(frame1, text="Simulating", font="Arial 9 italic", bg="gold")
+progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
+progress_label.grid_remove()
 
 # Frame 2
 frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")

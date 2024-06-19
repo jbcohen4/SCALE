@@ -304,7 +304,7 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
         #     print(out_text)
         #     flag = True
         # DEBUG: Store the xyce output files in output folder
-        # write_output_to_file("post_rad_LM741_slew_rate.txt", out_text, index)
+        write_output_to_file("post_rad_LM741_slew_rate.txt", out_text, index)
 
         parsed_output = parse_output_data_dynamic(out_text)
         if parsed_output:
@@ -318,7 +318,6 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
 
             v1 = (delta_v3 * 0.4) + min_v3 
             v2 = (delta_v3 * 0.6) + min_v3 
-            # we gonna take 0.4 to 0.6 for next work, as we need to work on the tighter range
 
             t1 = t2 = prev_time = None
 
@@ -411,7 +410,7 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
     _, freq, re_v3, im_v3, re_v4, im_v4 = pre_rad_parsed_output[0]
     print(re_v3, im_v3, re_v4, im_v4)
     const_val = 6.02059
-    cmrr.append(const_val - np.log10(abs(np.sqrt(re_v3**2 + im_v3**2))))
+    cmrr.append(const_val - 20 * (np.log10(abs(np.sqrt(re_v3**2 + im_v3**2)))))
 
     # process for post_rad
     for fluence, out_text in xyce_output:
@@ -419,7 +418,7 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
         parsed_output = parse_output_data_dynamic(out_text)
         _,freq, re_v3, im_v3, re_v4, im_v4 = parsed_output[0]
         fluences.append(fluence)
-        cmrr.append(const_val - np.log10(abs(np.sqrt(re_v3**2 + im_v3**2))))
+        cmrr.append(const_val - 20 * (np.log10(abs(np.sqrt(re_v3**2 + im_v3**2)))))
     
     if specification == "CMRR":
         return {'Fluences (n/cm^2)': fluences, 'CMRR_db': cmrr}
