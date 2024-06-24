@@ -1,0 +1,40 @@
+Title: LM193 / V_os, I_os, I_ib (A)
+*********************************************************
+
+*Input Voltage Source
+*********************
+VCC 1 0 DC {Vcc}V
+*VOUT 4 0 DC 1.4V
+Vin1 2 0 DC 2.5V
+Vin2 3 0 DC 2.5V
+
+*Pull-Up Resistor
+*****************
+R2 4 1 10000
+
+
+*Schematic name: LM193 core
+***************************
+*Subcircuit
+*X1 {21 22 23 24} = {V_CC VIN+ VIN- V_OUT}
+* X1 1 2 3 4 LM193_sc
+* Below logic for old subckt
+X1 1 0 2 3 4 LM193_sc
+
+*VVCC 5 1 0	Removed in revision -EG
+*VIN1 2 0 0	Removed in revision -EG
+*VIN2 3 0 0	Removed in revision -EG
+
+*Input
+******
+*.DC LIN VIN1 2.499 2.501 0.00001
+.DC LIN VIN1 2.499 2.505 0.00001
+
+
+*Output
+*******
+.print dc format=noindex file={output_filename}
++ V(2)
++ V(4)
++ I(Vin1)
++ I(Vin2)

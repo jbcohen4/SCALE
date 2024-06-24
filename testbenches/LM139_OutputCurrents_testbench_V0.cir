@@ -1,0 +1,26 @@
+Title: LM139 / Prerad / OutputCurrents (A)
+*********************************************************
+
+*Input Voltage Source
+*********************
+VCC 1 0 DC {Vcc}V
+VOUT 4 0 DC 1.4V
+Vin1 2 0 DC 2.5V
+Vin2 3 0 DC 1V
+
+*Schematic name: LM139 core
+***************************
+*Subcircuit
+*X1 {V_CC VIN+ VIN- V_OUT}
+X1 1 2 3 4 LM139_sc
+
+
+*Input
+******
+.DC LIN VIN1 0 2 2
+
+*Output
+*******
+.print dc format=noindex file={output_filename}
++ V(2)
++ I(VOUT)

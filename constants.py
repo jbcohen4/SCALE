@@ -20,9 +20,16 @@ LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_
 LM111_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Iib_Ios_testbench.cir")
 
 # paths for LM193
-LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Prerad.cir")
-LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad.cir")
-LM193_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Iib_Ios_testbench.cir")
+LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Prerad_V0.cir")
+LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad_V0.cir")
+LM193_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_OutputCurrents_testbench_V0.cir")
+LM193_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Iib_Ios_testbench_V1.cir")
+
+# paths for LM139
+LM139_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Prerad_V0.cir")
+LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Postrad_V1.cir")
+LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_OutputCurrents_testbench_V0.cir")
+LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V0.cir")
 
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
@@ -32,7 +39,8 @@ PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
     "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain", "CMRR"],
-    "LM193" : ["V_os", "I_ib", "I_os"],
+    "LM193" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
+    "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM111" : ["V_os", "I_ib", "I_os"]
 }
 
@@ -41,31 +49,6 @@ NEUTRON_TYPE = ["1MeV"]
 
 
 # object to store values of the specifications for dotter plot
-# DOTTER_SPECIFICATIONS = {
-#     "AD590": {
-#         "I_out": 0
-#     },
-#     "LM741": {
-#         "V_os": 6,
-#         "I_ib": 500,
-#         "I_os": 20,
-#         "Slew_rate": 0,
-#         "Supply_current": 0,
-#         "Ac_gain": 36,
-#         "CMRR": 70
-#     },
-#     "LM193": {
-#         "V_os": 4,
-#         "I_ib": 150,
-#         "I_os": 20
-#     },
-#     "LM111": {
-#         "V_os": 9,
-#         "I_ib": 300,
-#         "I_os": 100
-#     }
-# }
-
 DOTTER_SPECIFICATIONS = {
     "AD590": {
         "I_out": {"min": 0, "typical": 0, "max": 0}
@@ -80,9 +63,18 @@ DOTTER_SPECIFICATIONS = {
         "CMRR": {"min": 80, "typical": 95, "max": 0}
     },
     "LM193": {
-        "V_os": {"min": 0, "typical": 2, "max": 4},
-        "I_ib": {"min": 0, "typical": 75, "max": 150},
-        "I_os": {"min": 0, "typical": 10, "max": 20}
+        "I_ol": {"min": 6, "typical": 0, "max": 0},
+        "I_oh": {"min": 0, "typical": 0.1, "max": 0},
+        "V_os": {"min": 0, "typical": 2, "max": 5},
+        "I_ib": {"min": 0, "typical": -25, "max": -100},
+        "I_os": {"min": 0, "typical": 3, "max": 25}
+    },
+    "LM139": {
+        "I_ol": {"min": 6, "typical": 16, "max": 0},
+        "I_oh": {"min": 0, "typical": 0.1, "max": 0},
+        "V_os": {"min": 0, "typical": 2, "max": 5},
+        "I_ib": {"min": 0, "typical": -25, "max": -100},
+        "I_os": {"min": 0, "typical": 3, "max": 25}
     },
     "LM111": {
         "V_os": {"min": 0, "typical": 5, "max": 9},

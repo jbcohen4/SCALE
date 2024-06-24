@@ -262,7 +262,7 @@ progress_bar.grid(row=2, column=1, padx=2, pady=2)
 progress_bar.grid_remove()
 
 # Progress bar label 
-progress_label = tk.Label(frame1, text="Simulating", font="Arial 9 italic", bg="gold")
+progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg="gold")
 progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
 progress_label.grid_remove()
 
