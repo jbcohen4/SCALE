@@ -13,7 +13,7 @@ Vin2 3 0 DC 1V
 *Subcircuit
 *X1 {21 22 23 24} = {V_CC VIN+ VIN- V_OUT}
 *X1 1 2 3 4 LM193_sc
-* Below logic for old subckt
+* Below logic for V0 subckt
 X1 1 0 2 3 4 LM193_sc
 
 

@@ -2,7 +2,7 @@ Title: LM193 / Prerad
 *************************************
 
 *Voltage Source
-VCC 5 0 DC 15V
+VCC 5 0 DC {Vcc}V
 VEE 8 0 DC 0V
 
 VOUT 7 0 DC 5V

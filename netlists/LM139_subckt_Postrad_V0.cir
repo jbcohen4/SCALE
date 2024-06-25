@@ -2,7 +2,6 @@
 **************************
 .subckt LM139_sc 12 1 7 13
 
-
 *Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
 **********************************
 *PNP
@@ -12,9 +11,10 @@ D3 4 6 DMODPNP 0.9 temp=25
 D4 6 7 DMODPNP 0.04 temp=25
 D9 12 11 DMODPNP 0.8 temp=25
 
+*D10 12 11 DMODPNP 0.8 temp=25
+*D11 12 11 DMODPNP 0.8 temp=25
 D10 12 11 DMODPNP 0.8 temp=25
 D11 12 11 DMODPNP 0.8 temp=25
-
 
 D12 12 11 DMODPNP 0.1 temp=25
 D13 12 11 DMODPNP 0.1 temp=25
@@ -23,7 +23,6 @@ D17 1 2 DMODPNP 0.7 temp=25
 D18 15 2 DMODPNP 0.7 temp=25
 D19 9 6 DMODPNP 0.7 temp=25
 D20 7 6 DMODPNP 0.7 temp=25
-D22 11 12 DMODPNP 0.8 temp=25
 
 *NPN
 D5 3 0 DMODNPN 0.9 temp=25
@@ -34,10 +33,10 @@ D8 8 0 DMODNPN 10 temp=25
 *D15 14 10 DMODNPN 0.4 temp=25
 *D16 10 0 DMODNPN 0.4 temp=25
 D15 12 14 DMODNPN 0.4 temp=25
-D16 10 0 DMODNPN 10 temp=25
+D16 14 10 DMODNPN 10 temp=25
 
-D21 14 10 DMODNPN 0.4 temp=25
-
+D21 14 0 DMODNPN 0.4 temp=25
+D22 11 10 DMODNPN 0.8 temp=25
 
 *BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
 Q1         0 1 2 SPMOD 0.04 temp=25
@@ -52,8 +51,8 @@ Q9         8 11 12 LPNP_compact 0.8 temp=25
 
 *Q10        14 11 12 LPNP_compact 0.8 temp=25
 *Q11        14 11 12 LPNP_compact 0.8 temp=25
-Q10	   14 11 12 LPNP_compact 0.8 temp=25
-Q11	   11 11 12 LPNP_compact 0.8 temp=25
+Q10	   12 11 14 LPNP_compact 0.8 temp=25
+Q11	   12 11 11 LPNP_compact 0.8 temp=25
 
 Q12        15 11 12 LPNP_compact 0.1 temp=25
 Q13        9 11 12 LPNP_compact 0.1 temp=25
@@ -69,9 +68,8 @@ Q18        2 2 15 LPNP_compact 0.7 temp=25
 Q19        6 6 9 LPNP_compact 0.7 temp=25
 Q20        6 6 7 LPNP_compact 0.7 temp=25
 
-Q21	   11 14 10 NPN_compact 0.4 temp=25
-* Q22	   12 11 10 NPN_compact 0.8 temp=25
-Q22	   10 11 12 LPNP_compact 0.8 temp=25
+Q21	   11 14 0 NPN_compact 0.4 temp=25
+Q22	   12 11 10 NPN_compact 0.8 temp=25
 
 *Resistance: R<name> <+ node> <- node> [model name] <value>
 *R1          14 0 1K
@@ -80,7 +78,6 @@ R1	   10 0 1K
 
 *end of the subcircuit
 .ends
-
 
 .model NPN_COMPACT NPN(               
 +IS=2.354912E-16

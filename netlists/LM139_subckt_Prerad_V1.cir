@@ -2,43 +2,6 @@
 **************************
 .subckt LM139_sc 12 1 7 13
 
-
-*Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
-**********************************
-*PNP
-D1 2 1 DMODPNP 0.04 temp=25
-D2 4 2 DMODPNP 0.9 temp=25
-D3 4 6 DMODPNP 0.9 temp=25
-D4 6 7 DMODPNP 0.04 temp=25
-D9 12 11 DMODPNP 0.8 temp=25
-
-D10 12 11 DMODPNP 0.8 temp=25
-D11 12 11 DMODPNP 0.8 temp=25
-
-
-D12 12 11 DMODPNP 0.1 temp=25
-D13 12 11 DMODPNP 0.1 temp=25
-D14 12 11 DMODPNP 0.5 temp=25
-D17 1 2 DMODPNP 0.7 temp=25
-D18 15 2 DMODPNP 0.7 temp=25
-D19 9 6 DMODPNP 0.7 temp=25
-D20 7 6 DMODPNP 0.7 temp=25
-D22 11 12 DMODPNP 0.8 temp=25
-
-*NPN
-D5 3 0 DMODNPN 0.9 temp=25
-D6 3 0 DMODNPN 0.9 temp=25
-D7 5 0 DMODNPN 0.3 temp=25
-D8 8 0 DMODNPN 10 temp=25
-
-*D15 14 10 DMODNPN 0.4 temp=25
-*D16 10 0 DMODNPN 0.4 temp=25
-D15 12 14 DMODNPN 0.4 temp=25
-D16 10 0 DMODNPN 10 temp=25
-
-D21 14 10 DMODNPN 0.4 temp=25
-
-
 *BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
 Q1         0 1 2 SPMOD 0.04 temp=25
 Q2         3 2 4 LPNP_compact 0.9 temp=25
@@ -80,7 +43,6 @@ R1	   10 0 1K
 
 *end of the subcircuit
 .ends
-
 
 .model NPN_COMPACT NPN(               
 +IS=2.354912E-16
@@ -144,12 +106,6 @@ R1	   10 0 1K
 + RBM=100
 + RE=4
 + RC=1)
-
-.model DMODPNP D (IS = {PNP_IS}
-+ N = {PNP_N})
-
-.model DMODNPN D (IS = {NPN_IS}
-+ N = {NPN_N})
 
 *end of the list
 .end

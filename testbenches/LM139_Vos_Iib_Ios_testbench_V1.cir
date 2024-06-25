@@ -1,18 +1,18 @@
-Title: LM111 / Vos, Iib, Ios
+Title: LM139 / Prerad
 *************************************
-*Voltage Source
-VCC 4 0 DC {Vcc}V
-VEE 5 0 DC -15V
 
-Vout 8 0 5V
-RP 8 3 1k
+*Voltage Source
+VCC 5 0 DC {Vcc}V
+
+VOUT 7 0 DC 5V
 
 *********************
-*Subcircuit LM111 Vcc Vee NonInvInput InvInput Output
-X1 4 5 1 2 3 LM111
 
-RR1 2 0 0
-RR2 1 6 0
+X1 5 1 2 3 LM139_sc
+RR3 3 7 5k
+
+RR1 1 6 0
+RR2 2 0 0
 VP 6 0 DC 0V
 
 *Input

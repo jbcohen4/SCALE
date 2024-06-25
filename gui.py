@@ -92,7 +92,7 @@ def generate_data_thread():
         Fluence_Max = textbox_fluences_max.get()
         
         # validate data and put in default values as needed
-        if Selected_Part == "AD590":
+        if Selected_Part in ("AD590", "LM193", "LM139"):
             VCC = 5.0 if VCC == "" else float(VCC)
             VEE = None if VEE == "" else float(VEE)
         else:
@@ -281,7 +281,7 @@ def update_default_voltage(*args):
     textbox_temp.delete(0, 'end')
     textbox_fluences_min.delete(0, 'end')
     textbox_fluences_max.delete(0, 'end')
-    if var1.get() == 'AD590':
+    if var1.get() in ('AD590', 'LM193', 'LM139'):
         default_voltage = "5"
     else:
         default_voltage = "15"
