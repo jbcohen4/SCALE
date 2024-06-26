@@ -434,7 +434,7 @@ def generate_data_for_LM111(VCC, VEE, fluence_min, fluence_max, specification: s
     subcircuit_pre_rad = LM111_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = LM111_SUBCKT_POST_RAD_TEMPLATE
 
-    testbench = process_string_with_replacements(LM111_TESTBENCH_TEMPLATE, {"Vcc": VCC})
+    testbench = process_string_with_replacements(LM111_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
@@ -611,7 +611,7 @@ def generate_data_for_LM193_VOS_Old_calculation(VCC, VEE, fluence_min, fluence_m
             fluences.append(set_fluence)
             i_ib.append(I_ib * 10 ** 9) # amps to nA
             i_os.append(I_os * 10 ** 9) # amps to nA
-        if V_out > (VCC * 0.9) :
+        if V_out >  4.89 :
             v_os.append(V_os * 10 ** 3) # volts to mV
             break
     
@@ -632,7 +632,7 @@ def generate_data_for_LM193_VOS_Old_calculation(VCC, VEE, fluence_min, fluence_m
                 i_ib.append(I_ib * 10 ** 9) # amps to nA
                 i_os.append(I_os * 10 ** 9) # amps to nA
                 vos_flag = True
-            if V_out > (VCC * 0.9) and vos_flag:
+            if V_out > 4.89 and vos_flag:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 break
         else:
@@ -738,7 +738,7 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
             if V_os == 0:
                 temp_ib = I_ib * 10 ** 9
                 temp_os = I_os * 10 ** 9
-            if V_out > (VCC*0.9):
+            if V_out >  4.89:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 fluences.append(fluence)
                 i_ib.append(temp_ib) # amps to nA

@@ -68,14 +68,14 @@ DOTTER_SPECIFICATIONS = {
         "I_ol": {"min": 6, "typical": 0, "max": 0},
         "I_oh": {"min": 0, "typical": 0.1, "max": 0},
         "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": -25, "max": -100},
+        "I_ib": {"min": 0, "typical": 25, "max": 100},
         "I_os": {"min": 0, "typical": 3, "max": 25}
     },
     "LM139": {
         "I_ol": {"min": 6, "typical": 16, "max": 0},
         "I_oh": {"min": 0, "typical": 0.1, "max": 0},
         "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": -25, "max": -100},
+        "I_ib": {"min": 0, "typical": 25, "max": 100},
         "I_os": {"min": 0, "typical": 3, "max": 25}
     },
     "LM111": {

@@ -2,7 +2,7 @@ Title: LM111 / Vos, Iib, Ios
 *************************************
 *Voltage Source
 VCC 4 0 DC {Vcc}V
-VEE 5 0 DC -15V
+VEE 5 0 DC {Vee}V
 
 Vout 8 0 5V
 RP 8 3 1k

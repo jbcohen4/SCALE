@@ -54,7 +54,7 @@ def create_frame(row, column, text, width=2, height=2, borderwidth = 2, bg = "wh
 
 # Validation function to allow only numerical values
 def validate_numerical(value):
-    if value == '':
+    if value == '' or value == "-":
         return True
     try:
         float(value)
