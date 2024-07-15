@@ -5,7 +5,7 @@ VCC 4 0 DC {Vcc}V
 VEE 5 0 DC {Vee}V
 
 Vout 8 0 5V
-RP 8 3 1k
+RP 8 3 7.5k
 
 *********************
 *Subcircuit LM111 Vcc Vee NonInvInput InvInput Output

@@ -17,7 +17,8 @@ LM741_CMRR_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_CMRR_testbench
 # paths for LM111
 LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad.cir")
 LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Postrad.cir")
-LM111_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Iib_Ios_testbench.cir")
+LM111_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_OutputCurrents_testbench.cir")
+LM111_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Iib_Ios_testbench.cir")
 
 # paths for LM193
 # V0 are the old subckts shared by Triet, V1 are given by Ethan 
@@ -43,7 +44,7 @@ DROPDOWN_MAPPING = {
     "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain", "CMRR"],
     "LM193" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
-    "LM111" : ["V_os", "I_ib", "I_os"]
+    "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
 }
 
 # List to store the types of Neutrons
@@ -56,31 +57,33 @@ DOTTER_SPECIFICATIONS = {
         "I_out": {"min": 0, "typical": 0, "max": 0}
     },
     "LM741": {
-        "V_os": {"min": 0, "typical": 1, "max": 6},
-        "I_ib": {"min": 0, "typical": 85, "max": 500},
-        "I_os": {"min": 0, "typical": 80, "max": 20},
+        "V_os": {"min": 0, "typical": 0, "max": 6},
+        "I_ib": {"min": 0, "typical": 0, "max": 500},
+        "I_os": {"min": 0, "typical": 0, "max": 500},
         "Slew_rate": {"min": 0, "typical": 0, "max": 0},
-        "Supply_current": {"min": 0, "typical": 0, "max": 0},
+        "Supply_current": {"min": 0, "typical": 0, "max": 2.8},
         "Ac_gain": {"min": 0, "typical": 0, "max": 36},
-        "CMRR": {"min": 80, "typical": 95, "max": 0}
+        "CMRR": {"min": 80, "typical": 0, "max": 0}
     },
     "LM193": {
         "I_ol": {"min": 6, "typical": 0, "max": 0},
-        "I_oh": {"min": 0, "typical": 0.1, "max": 0},
-        "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": 25, "max": 100},
-        "I_os": {"min": 0, "typical": 3, "max": 25}
+        "I_oh": {"min": 0, "typical": 0, "max": 0},
+        "V_os": {"min": 0, "typical": 0, "max": 5},
+        "I_ib": {"min": 0, "typical": 0, "max": 100},
+        "I_os": {"min": 0, "typical": 0, "max": 25}
     },
     "LM139": {
-        "I_ol": {"min": 6, "typical": 16, "max": 0},
-        "I_oh": {"min": 0, "typical": 0.1, "max": 0},
-        "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": 25, "max": 100},
-        "I_os": {"min": 0, "typical": 3, "max": 25}
+        "I_ol": {"min": 6, "typical": 0, "max": 0},
+        "I_oh": {"min": 0, "typical": 0, "max": 0},
+        "V_os": {"min": 0, "typical": 0, "max": 5},
+        "I_ib": {"min": 0, "typical": 0, "max": 100},
+        "I_os": {"min": 0, "typical": 0, "max": 25}
     },
     "LM111": {
-        "V_os": {"min": 0, "typical": 5, "max": 9},
-        "I_ib": {"min": 0, "typical": 150, "max": 300},
-        "I_os": {"min": 0, "typical": 50, "max": 100}
+        "I_ol": {"min": 6, "typical": 0, "max": 0},
+        "I_oh": {"min": 0, "typical": 0, "max": 0},
+        "V_os": {"min": 0, "typical": 0, "max": 9},
+        "I_ib": {"min": 0, "typical": 0, "max": 300},
+        "I_os": {"min": 0, "typical": 0, "max": 100}
     }
 }

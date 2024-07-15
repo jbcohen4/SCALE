@@ -26,7 +26,7 @@ current_y_scale = 'linear'
 root = tk.Tk()
 
 # Set title of the window
-root.title("Radiation on BJT explorer")
+root.title("Impact Neutron")
 
 # Set dimensions of the window
 root.geometry("1000x800")
@@ -332,7 +332,7 @@ dropdown_neutron.config(bg="white")
 neutron_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 neutron_type_uom.grid(row=0, column=2, sticky="e")
 
-label_fluences_min = tk.Label(frame3, text="Fluences Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
 # Text Entry for Fluences Min with border and padding
@@ -343,7 +343,7 @@ textbox_fluences_min.grid(row=1, column=1, sticky="w")
 label_fluences_range1 = tk.Label(frame3, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")
 
-label_fluences_max = tk.Label(frame3, text="Fluences Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
 # Text Entry for Fluences Max with border and padding

@@ -156,9 +156,6 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
-            # print(f"stdout: {stdout}")
-            # print(f"stderr: {stderr}")
-            # print(f"return_code: {return_code}")
             out_text = read_file_as_string(temp_xyce_output_filename)
             # print(out_text)
             assert len(out_text) > 0
@@ -200,7 +197,7 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
         else:
             raise Exception(f"The user asked for voltage: {voltage}V, but that was not one of the Vcc settings that we ran")
     return {
-        'Fluences (n/cm^2)': xs,
+        'Fluence (n/cm^2)': xs,
         'I_out (µA)': ys
     }
 
@@ -241,11 +238,11 @@ def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: s
             print(f"you asked for a Vcc of {VCC} but we can't give that to you right now.")
             assert False # The problem here is that we can't give them the voltage they asked for. We should probably give them an error message instead of crashing.
     if specification == "V_os":
-        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_oss}
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_oss}
     elif specification == "I_ib":
-        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ibs}
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ibs}
     elif specification == "I_os":
-        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_oss}
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_oss}
     else:
         assert False
 
@@ -348,9 +345,9 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
             index += 1
 
     if specification == "Slew_rate":
-        return {'Fluences (n/cm^2)': fluences, 'Slew_rate (V/µs)': Slew_rate}
+        return {'Fluence (n/cm^2)': fluences, 'Slew_rate (V/µs)': Slew_rate}
     elif specification == "Supply_current":
-        return {'Fluences (n/cm^2)': fluences, 'Supply_current (µA)': Supply_current}
+        return {'Fluence (n/cm^2)': fluences, 'Supply_current (µA)': Supply_current}
     else:
         assert False
 
@@ -390,7 +387,7 @@ def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specific
         Ac_gain.append((np.sqrt((re_v3**2 + im_v3**2) / (re_v2**2 + im_v2**2)))/1000)
     
     if specification == "Ac_gain":
-        return {'Fluences (n/cm^2)': fluences, 'Ac_gain (mV)': Ac_gain}
+        return {'Fluence (n/cm^2)': fluences, 'Ac_gain (mV)': Ac_gain}
     else:
         assert False
 
@@ -425,16 +422,63 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
         cmrr.append(const_val - 20 * (np.log10(abs(np.sqrt(re_v3**2 + im_v3**2)))))
     
     if specification == "CMRR":
-        return {'Fluences (n/cm^2)': fluences, 'CMRR_db': cmrr}
+        return {'Fluence (n/cm^2)': fluences, 'CMRR_db': cmrr}
     else:
         assert False
 
-def generate_data_for_LM111(VCC, VEE, fluence_min, fluence_max, specification: str):
-    print("generate_data_for_LM111")
+def generate_data_for_LM111_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, specification: str):
     subcircuit_pre_rad = LM111_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = LM111_SUBCKT_POST_RAD_TEMPLATE
 
-    testbench = process_string_with_replacements(LM111_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
+    testbench = process_string_with_replacements(LM111_OUTPUT_CURRENT_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, I_ol ,I_oh  = [], [], []
+
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for index, row in enumerate(pre_rad_parsed_output):
+        _, v_2, i_vout = row
+        if index == 0:
+            fluences.append(set_fluence)
+            I_ol.append(-i_vout * 10 ** 3) # amps to mA
+        if index == 1:
+            I_oh.append(-i_vout * 10 ** 9) # volts to nA
+
+    # process for post_rad
+    store = False
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        # if store == False:
+        #     with open("output/post_rad_LM193.txt", 'w') as file:
+        #         file.write(out_text)
+        #     store = True
+        parsed_output = parse_output_data_dynamic(out_text)
+        for index, row in enumerate(parsed_output[:2]):
+            _, v_2, i_vout = row
+            if index == 0:
+                fluences.append(fluence)
+                I_ol.append(-i_vout * 10 ** 3) # amps to mA
+            if index == 1:
+                I_oh.append(-i_vout * 10 ** 9) # volts to nA
+    if specification == "I_ol":
+        return {'Fluence (n/cm^2)': fluences, 'I_ol (mA)': I_ol}
+    elif specification == "I_oh":
+        return {'Fluence (n/cm^2)': fluences, 'I_oh (nA)': I_oh}
+    else:
+        assert False 
+
+def generate_data_for_LM111_VOS(VCC, VEE, fluence_min, fluence_max, specification: str):
+    subcircuit_pre_rad = LM111_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM111_SUBCKT_POST_RAD_TEMPLATE
+
+    testbench = process_string_with_replacements(LM111_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
@@ -477,11 +521,11 @@ def generate_data_for_LM111(VCC, VEE, fluence_min, fluence_max, specification: s
             assert False
     
     if specification == "V_os":
-        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_os}
     elif specification == "I_ib":
-        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
     elif specification == "I_os":
-        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_os}
     else:
         assert False 
 
@@ -527,9 +571,9 @@ def generate_data_for_LM193_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, s
             if index == 1:
                 I_oh.append(-i_vout * 10 ** 9) # volts to nA
     if specification == "I_ol":
-        return {'Fluences (n/cm^2)': fluences, 'I_ol (mA)': I_ol}
+        return {'Fluence (n/cm^2)': fluences, 'I_ol (mA)': I_ol}
     elif specification == "I_oh":
-        return {'Fluences (n/cm^2)': fluences, 'I_oh (nA)': I_oh}
+        return {'Fluence (n/cm^2)': fluences, 'I_oh (nA)': I_oh}
     else:
         assert False 
 
@@ -580,11 +624,11 @@ def generate_data_for_LM193_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
             assert False
 
     if specification == "V_os":
-        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_os}
     elif specification == "I_os":
-        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_os}
     elif specification == "I_ib":
-        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
     else:
         assert False 
 
@@ -639,16 +683,15 @@ def generate_data_for_LM193_VOS_Old_calculation(VCC, VEE, fluence_min, fluence_m
             assert False
 
     if specification == "V_os":
-        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_os}
     elif specification == "I_os":
-        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_os}
     elif specification == "I_ib":
-        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
     else:
         assert False 
 
 def generate_data_for_LM139_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, specification: str):
-    print("generate_data_for_LM139_output current")
     subcircuit_pre_rad = LM139_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = LM139_SUBCKT_POST_RAD_TEMPLATE
 
@@ -689,9 +732,9 @@ def generate_data_for_LM139_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, s
             if index == 1:
                 I_oh.append(-i_vout * 10 ** 9) # volts to nA
     if specification == "I_ol":
-        return {'Fluences (n/cm^2)': fluences, 'I_ol (mA)': I_ol}
+        return {'Fluence (n/cm^2)': fluences, 'I_ol (mA)': I_ol}
     elif specification == "I_oh":
-        return {'Fluences (n/cm^2)': fluences, 'I_oh (nA)': I_oh}
+        return {'Fluence (n/cm^2)': fluences, 'I_oh (nA)': I_oh}
     else:
         assert False 
 
@@ -721,8 +764,7 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         if V_out > 4.89 :
             v_os.append(V_os * 10 ** 3) # volts to mV
             break
-    
-    print("post rad processing started")
+
     # process for post_rad
     store = False
     for fluence, out_text in xyce_output:
@@ -747,14 +789,13 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         else:
             continue
             assert False
-    print('Postrad processing finished')
 
     if specification == "V_os":
-        return {'Fluences (n/cm^2)': fluences, 'V_os (mV)': v_os}
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_os}
     elif specification == "I_os":
-        return {'Fluences (n/cm^2)': fluences, 'I_os (nA)': i_os}
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_os}
     elif specification == "I_ib":
-        return {'Fluences (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
     else:
         assert False 
 
@@ -773,7 +814,10 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
         elif Selected_Specification == "CMRR":
             return generate_data_for_LM741_CMRR(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
-        return generate_data_for_LM111(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        if Selected_Specification in ["I_ol", "I_oh"]:
+            return generate_data_for_LM111_OUTPUT_CURRENT(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+        elif Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            return generate_data_for_LM111_VOS(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM193":
         if Selected_Specification in ["I_ol", "I_oh"]:
             return generate_data_for_LM193_OUTPUT_CURRENT(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
