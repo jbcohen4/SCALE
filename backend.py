@@ -263,7 +263,7 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
     set_fluence = 1e11
     if pre_rad_parsed_output:
         fluences.append(set_fluence)
-        Supply_current.append(pre_rad_parsed_output[0][4] * 10 ** 6) # amps to µA
+        Supply_current.append(pre_rad_parsed_output[0][4] * 10 ** 3) # amps to mA
         v3_values = [v_3 for _, _, _, v_3, _ in pre_rad_parsed_output]
         min_v3 = min(v3_values)
         max_v3 = max(v3_values)
@@ -310,7 +310,7 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
         parsed_output = parse_output_data_dynamic(out_text)
         if parsed_output:
             fluences.append(fluence)
-            Supply_current.append(parsed_output[0][4] * 10 ** 6) # amps to µA
+            Supply_current.append(parsed_output[0][4] * 10 ** 3) # amps to mA
             
             v3_values = [v_3 for _, _, _, v_3, _ in parsed_output]
             min_v3 = min(v3_values) 
@@ -347,7 +347,7 @@ def generate_data_for_LM741_SLEW_RATE(VCC, fluence_min, fluence_max, specificati
     if specification == "Slew_rate":
         return {'Fluence (n/cm^2)': fluences, 'Slew_rate (V/µs)': Slew_rate}
     elif specification == "Supply_current":
-        return {'Fluence (n/cm^2)': fluences, 'Supply_current (µA)': Supply_current}
+        return {'Fluence (n/cm^2)': fluences, 'Supply_current (mA)': Supply_current}
     else:
         assert False
 
@@ -387,7 +387,7 @@ def generate_data_for_LM741_AC_GAIN(VCC, VEE, fluence_min, fluence_max, specific
         Ac_gain.append((np.sqrt((re_v3**2 + im_v3**2) / (re_v2**2 + im_v2**2)))/1000)
     
     if specification == "Ac_gain":
-        return {'Fluence (n/cm^2)': fluences, 'Ac_gain (mV)': Ac_gain}
+        return {'Fluence (n/cm^2)': fluences, 'Ac_gain (V/mV)': Ac_gain}
     else:
         assert False
 

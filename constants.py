@@ -41,7 +41,8 @@ PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
-    "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain", "CMRR"],
+    # "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain", "CMRR"],
+    "LM741": ["V_os", "I_ib", "I_os", "Supply_current", "Ac_gain", "CMRR"],
     "LM193" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
@@ -59,31 +60,31 @@ DOTTER_SPECIFICATIONS = {
     "LM741": {
         "V_os": {"min": 0, "typical": 0, "max": 6},
         "I_ib": {"min": 0, "typical": 0, "max": 500},
-        "I_os": {"min": 0, "typical": 0, "max": 500},
+        "I_os": {"min": 0, "typical": 0, "max": 200},
         "Slew_rate": {"min": 0, "typical": 0, "max": 0},
         "Supply_current": {"min": 0, "typical": 0, "max": 2.8},
-        "Ac_gain": {"min": 0, "typical": 0, "max": 36},
+        "Ac_gain": {"min": 25, "typical": 0, "max": 0},
         "CMRR": {"min": 80, "typical": 0, "max": 0}
     },
     "LM193": {
         "I_ol": {"min": 6, "typical": 0, "max": 0},
         "I_oh": {"min": 0, "typical": 0, "max": 0},
         "V_os": {"min": 0, "typical": 0, "max": 5},
-        "I_ib": {"min": 0, "typical": 0, "max": 100},
-        "I_os": {"min": 0, "typical": 0, "max": 25}
+        "I_ib": {"min": 0, "typical": 0, "max": 300},
+        "I_os": {"min": 0, "typical": 0, "max": 100}
     },
     "LM139": {
         "I_ol": {"min": 6, "typical": 0, "max": 0},
         "I_oh": {"min": 0, "typical": 0, "max": 0},
         "V_os": {"min": 0, "typical": 0, "max": 5},
-        "I_ib": {"min": 0, "typical": 0, "max": 100},
-        "I_os": {"min": 0, "typical": 0, "max": 25}
-    },
-    "LM111": {
-        "I_ol": {"min": 6, "typical": 0, "max": 0},
-        "I_oh": {"min": 0, "typical": 0, "max": 0},
-        "V_os": {"min": 0, "typical": 0, "max": 9},
         "I_ib": {"min": 0, "typical": 0, "max": 300},
         "I_os": {"min": 0, "typical": 0, "max": 100}
+    },
+    "LM111": {
+        "I_ol": {"min": 0, "typical": 0, "max": 0},
+        "I_oh": {"min": 0, "typical": 0, "max": 0},
+        "V_os": {"min": 0, "typical": 0, "max": 4},
+        "I_ib": {"min": 0, "typical": 0, "max": 150},
+        "I_os": {"min": 0, "typical": 0, "max": 20}
     }
 }
