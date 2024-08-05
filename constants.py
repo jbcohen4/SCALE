@@ -2,11 +2,11 @@ import exe_tools
 
 XYCE_EXE_PATH = exe_tools.adjust_path("xyce/Xyce.exe")
 # paths for the AD590
-AD590_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_template.cir")
+AD590_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_new_subckt_V0.cir")
 
 #paths for the LM741
-LM741_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_subckt_Postrad.cir")
-LM741_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_subckt_Prerad.cir")
+LM741_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_new_subckt_Postrad_V0.cir")
+LM741_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_new_subckt_Prerad_V0.cir")
 
 #testbenches for the LM741
 LM741_CLUDGE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_cludge_testbench_v1.cir")
@@ -15,8 +15,8 @@ LM741_AC_GAIN_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_AC_Gain_tes
 LM741_CMRR_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_CMRR_testbench.cir")
 
 # paths for LM111
-LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad.cir")
-LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Postrad.cir")
+LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_new_subckt_Prerad.cir")
+LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_new_subckt_Postrad.cir")
 LM111_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_OutputCurrents_testbench.cir")
 LM111_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Iib_Ios_testbench.cir")
 
@@ -35,8 +35,9 @@ LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/L
 LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V1.cir")
 
 # NPN and PNP parameters as dataframes
-NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
-PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
+NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V1.csv')
+PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V2.csv')
+
 
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {

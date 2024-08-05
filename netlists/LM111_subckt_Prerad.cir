@@ -2,7 +2,6 @@
 **************************
 .subckt LM111 8 28 35 36 33
 
-
 *Current source: I<name> <+ node> <- node> [[DC] <value>]
 IS1 8 18 10uA
 
