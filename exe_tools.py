@@ -14,6 +14,12 @@ def read_txt_file(path: str) -> str:
     with open(path, 'r') as file:
         return file.read()
 
+def get_pdf_path(pdf_filename: str) -> Path:
+    """Returns the path to the PDF file in the pdf directory, adjusted for executable mode."""
+    pdf_directory = adjust_path('pdf')  # Adjust the path to point to the pdf directory
+    pdf_path = pdf_directory / pdf_filename
+    return pdf_path
+
 from uuid import uuid4 # ChatGPT says uuid4 is the best kind of uuid
 PYTHON_MODE = uuid4() 
 EXE_MODE = uuid4()

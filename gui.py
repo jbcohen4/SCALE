@@ -14,7 +14,9 @@ import pandas as pd
 
 import backend
 import exe_tools
+import fitz 
 
+from pdf_viewer import PDFViewer 
 from constants import *
 INFINITY = float('inf') 
 
@@ -28,11 +30,23 @@ root = tk.Tk()
 # Set title of the window
 root.title("Impact Neutron")
 
-# Set dimensions of the window
-root.geometry("1000x800")
+# Set the window to full screen
+root.attributes('-fullscreen', True)
+
+# Function to exit full-screen mode when Escape is pressed
+def exit_full_screen(event=None):
+    root.attributes('-fullscreen', False)
+    root.geometry("1200x1000")  # Optionally, set to a default window size when exiting full screen
+
+# Bind the Escape key to exit full-screen mode
+root.bind("<Escape>", exit_full_screen)
 
 # Set the background color of the root window
 root.configure(bg="white")
+
+# Configure grid to ensure equal column widths
+for i in range(7):  # Assuming 7 columns
+    root.grid_columnconfigure(i, weight=1)
 
 # Custom style for the progress bar
 style = ttk.Style()
@@ -47,8 +61,8 @@ style.configure('Maroon.Horizontal.TProgressbar',
                 thickness=15)
 
 # Adding frames for parts and specifications
-def create_frame(row, column, text, width=2, height=2, borderwidth = 2, bg = "white", padx=10, pady=10,highlightbackground="white", highlightthickness=0):
-    frame = LabelFrame(root, text=text, padx=padx, pady=pady, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg,highlightbackground=highlightbackground, highlightthickness=highlightthickness)
+def create_frame(row, column, text, width=2, height=2, borderwidth=2, bg="white", padx=10, pady=10, highlightbackground="white", highlightthickness=0):
+    frame = LabelFrame(root, text=text, padx=padx, pady=pady, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg, highlightbackground=highlightbackground, highlightthickness=highlightthickness)
     frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
     return frame
 
@@ -85,16 +99,16 @@ def generate_data_thread():
         # get data from user inputs
         Selected_Part = var1.get()
         Selected_Specification = var2.get()
-        VCC = textbox_dataset_vcc.get()
-        VEE = textbox_dataset_vee.get()
+        VCC = spinbox_vcc.get()
+        VEE = spinbox_vee.get()
         Temperature = textbox_temp.get() # at the moment, the backend can't use this
-        Fluence_Min = textbox_fluences_min.get()
-        Fluence_Max = textbox_fluences_max.get()
+        Fluence_Min = spinbox_fluences_min.get()
+        Fluence_Max = spinbox_fluences_max.get()
         
         # validate data and put in default values as needed
         if Selected_Part in ("AD590", "LM193", "LM139"):
             VCC = 5.0 if VCC == "" else float(VCC)
-            VEE = None if VEE == "" else float(VEE)
+            VEE = None if VEE == "NA" else float(VEE)
         else:
             VCC = 15.0 if VCC == "" else float(VCC)
             VEE = -15.0 if VEE == "" else float(VEE)
@@ -193,12 +207,20 @@ def save_plot_data():
 
 # Clear function 
 def clear_function():
-    # Clear text entries
-    textbox_dataset_vcc.delete(0, tk.END)
-    textbox_dataset_vee.delete(0, tk.END)
+    # Clear spinbox entries
+    spinbox_vcc.delete(0, tk.END)
+    spinbox_vcc.insert(0, 5) 
+
+    spinbox_vee.delete(0, tk.END)
+    spinbox_vee.insert(0, 'NA')  
+
     textbox_temp.delete(0, tk.END)
-    textbox_fluences_min.delete(0, tk.END)
-    textbox_fluences_max.delete(0, tk.END)
+
+    spinbox_fluences_min.delete(0, tk.END)
+    spinbox_fluences_min.insert(0, 4.03)  
+
+    spinbox_fluences_max.delete(0, tk.END)
+    spinbox_fluences_max.insert(0, 4.50)  
     print("Clear all the fields")
 
     # Find and destroy the existing graph frame
@@ -231,6 +253,21 @@ var1.set(options_part[0])
 dropdown_part = OptionMenu(frame1, var1, *options_part)
 dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
 dropdown_part.config(bg="white")
+
+def datasheet_open():
+    selected_part = var1.get()
+    pdf_filename = f"{selected_part}.pdf"
+
+    pdf_path = exe_tools.get_pdf_path(pdf_filename)
+
+    if pdf_path.exists():
+        PDFViewer(root, pdf_path)  # Use the imported PDFViewer class
+    else:
+        print(f"PDF file {pdf_filename} not found.")
+
+# data sheet button
+datasheet_button = tk.Button(frame1, text="Open Datasheet", command=lambda: threading.Thread(target=datasheet_open, daemon=True).start(), width=15, height=1, bg="brown4", fg="white", bd=0, relief="solid")
+datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
 label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_Specifications.grid(row=1, column=0, sticky="e")
@@ -276,37 +313,37 @@ label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
 #set default VCC & VEE based on spec
 def update_default_voltage(*args):
-    textbox_dataset_vcc.delete(0, 'end')
-    textbox_dataset_vee.delete(0, 'end')
-    textbox_temp.delete(0, 'end')
-    textbox_fluences_min.delete(0, 'end')
-    textbox_fluences_max.delete(0, 'end')
-    if var1.get() in ('AD590', 'LM193', 'LM139'):
-        default_voltage = "5"
-    else:
-        default_voltage = "15"
-        textbox_dataset_vee.insert(0, -1 * float(default_voltage))
-    textbox_dataset_vcc.insert(0, float(default_voltage))
-    textbox_temp.insert(0, "25")
-    textbox_fluences_min.insert(0, "4.03")
-    textbox_fluences_max.insert(0, "10")
-    
+    # Clear the current values
+    spinbox_vcc.delete(0, tk.END)
+    spinbox_vee.delete(0, tk.END)
+    textbox_temp.delete(0, tk.END)
+    spinbox_fluences_min.delete(0, tk.END)
+    spinbox_fluences_max.delete(0, tk.END)
 
-# Whenever the spec changes, update the default voltage accordingly
+    # Set default values based on the selected part
+    if var1.get() in ('AD590', 'LM193', 'LM139'):
+        default_voltage = 5
+        spinbox_vee.insert(0, 'NA')  # Assuming VEE should be 'NA' for these parts
+    else:
+        default_voltage = 15
+        spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
+
+    spinbox_vcc.insert(0, default_voltage)  # Set VCC
+    textbox_temp.insert(0, "25")  # Set default temperature
+    spinbox_fluences_min.insert(0, 4.03)  # Set default Fluence Min
+    spinbox_fluences_max.insert(0, 4.50)  # Set default Fluence Max
+    
+# Bind the update_default_voltage function to changes in var1 (the part selection)
 var1.trace_add('write', update_default_voltage)
 
-# Text Entry for Dataset with border and padding
-validate_dataset_vcc = (root.register(validate_numerical), '%P')
-textbox_dataset_vcc = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_dataset_vcc,width=7)
-textbox_dataset_vcc.insert(0,"5")
-textbox_dataset_vcc.grid(row=0, column=1, sticky="w")
+spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
+spinbox_vcc.grid(row=0, column=1, sticky="w")
 
 label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_dataset_vee.grid(row=1, column=0,sticky="e")
 
-validate_dataset_vee = (root.register(validate_numerical), '%P')
-textbox_dataset_vee = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_dataset_vee,width=7)
-textbox_dataset_vee.grid(row=1, column=1, sticky="w")
+spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
+spinbox_vee.grid(row=1, column=1, sticky="w")
 
 label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_temp.grid(row=2, column=0, sticky="e")
@@ -335,29 +372,27 @@ neutron_type_uom.grid(row=0, column=2, sticky="e")
 label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 
-# Text Entry for Fluences Min with border and padding
-validate_fluences_min = (root.register(validate_numerical), '%P')
-textbox_fluences_min = ttk.Entry(frame3, style="TEntry", validate="key", validatecommand=validate_fluences_min,width=10)
-textbox_fluences_min.insert(0,"4.03")
-textbox_fluences_min.grid(row=1, column=1, sticky="w")
+spinbox_fluences_min = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
+spinbox_fluences_min.grid(row=1, column=1, sticky="w")
 label_fluences_range1 = tk.Label(frame3, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")
 
 label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
-# Text Entry for Fluences Max with border and padding
-validate_fluences_max = (root.register(validate_numerical), '%P')
-textbox_fluences_max = ttk.Entry(frame3, style="TEntry", validate="key", validatecommand=validate_fluences_max, width=10)
-textbox_fluences_max.insert(0,"10")
-textbox_fluences_max.grid(row=2, column=1, sticky="w")
+spinbox_fluences_max = tk.Spinbox(frame3, from_=4.50, to=4.55, increment=0.01, width=10)
+spinbox_fluences_max.grid(row=2, column=1, sticky="w")
 label_fluences_range2 = tk.Label(frame3, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range2.grid(row=2, column=2, sticky="e")
+
+# Call the function initially to set defaults for the first selected part
+update_default_voltage()
 
 # Frame 4
 frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 # Button size
-button_width = 10
+button_text_scale = "Change to Log Scale"
+button_width = len(button_text_scale) + 4  # Add some padding to the width
 button_height = 1
 
 # Button Design
@@ -367,16 +402,31 @@ button_border_color = "white"
 button_border_width = 2
 
 #Buttons
-execute_button = tk.Button(frame4, text="Execute", command=lambda: threading.Thread(target=generate_data_thread, daemon=True).start(), width=10, height=1, bg="brown4", fg="white", bd=0, relief="solid")
+execute_button = tk.Button(frame4, text="Execute", command=lambda: threading.Thread(target=generate_data_thread, daemon=True).start(), width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 execute_button.grid(row=0, column=1, padx=10, pady=5)
 
-change_scale_button = tk.Button(frame4, text="Change Scale", command=change_scale, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+def change_scale(button):
+    global fig, ax, canvas, current_y_scale
+    
+    # Toggle between 'linear' and 'log'
+    if current_y_scale == 'linear':
+        current_y_scale = 'log'
+        button.config(text="Change to Linear Scale")  # Update button text
+    else:
+        current_y_scale = 'linear'
+        button.config(text="Change to Log Scale")  # Update button text
+
+    ax.set_yscale(current_y_scale)
+    fig.canvas.draw_idle()
+
+# Create the button
+change_scale_button = tk.Button(frame4, text=button_text_scale, command=lambda: change_scale(change_scale_button), width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 change_scale_button.grid(row=1, column=1, padx=10, pady=5)
 
-save_button = tk.Button(frame4, text="Save", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+save_button = tk.Button(frame4, text="Save to csv", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 save_button.grid(row=2, column=1, padx=10, pady=5)
 
-clear_button = tk.Button(frame4, text="Clear", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+clear_button = tk.Button(frame4, text="Clear input", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 clear_button.grid(row=3, column=1, padx=10, pady=5)
 
 

@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
 
-    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'), ('testbenches/*','testbenches'), ('xyce/*', 'xyce'), ('images/*', 'images')],
+    datas=[('csvs/*', 'csvs'), ('netlists/*', 'netlists'), ('testbenches/*','testbenches'), ('xyce/*', 'xyce'), ('images/*', 'images'), ('pdf/*', 'pdf')],
 
     hiddenimports=[],
     hookspath=[],
