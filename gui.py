@@ -3,8 +3,7 @@ import threading
 
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
-from tkinter import filedialog
-from tkinter import Label, LabelFrame, StringVar, OptionMenu, ttk, filedialog
+from tkinter import Label, LabelFrame, StringVar, OptionMenu, ttk, filedialog, scrolledtext
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -21,7 +20,7 @@ from constants import *
 INFINITY = float('inf') 
 
 # Global variables to keep track of the chart and axes
-global fig, ax, canvas, current_y_scale 
+global fig, ax, canvas, current_y_scale , message_widget
 current_y_scale = 'linear'
 
 # Create Window for GUI
@@ -76,16 +75,46 @@ def validate_numerical(value):
     except ValueError:
         return False
 
+
+# Function to log messages directly to the Text widget
+def log_message(message):
+    """Append a message to the message widget."""
+    if message_widget: 
+        message_widget.insert(tk.END, message + "\n")
+        message_widget.see(tk.END)  
+    else:
+        print("Message widget is not initialized.")
+
+# Function to create the message frame within the graph frame
 def setup_graph():
-    global fig, ax, canvas, current_y_scale
-  
+    global fig, ax, canvas, current_y_scale, message_widget
+
+    # Create the main graph frame
     graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
+
+    # Create a sub-frame within the graph frame to hold the graph and messages side by side
+    graph_sub_frame = tk.Frame(graph_frame, bg="white")
+    graph_sub_frame.grid(row=0, column=0, sticky="nsew")
+    graph_frame.grid_columnconfigure(0, weight=4)
+    graph_frame.grid_columnconfigure(1, weight=1)
+
+    # Create the matplotlib figure and canvas in the left side of the sub-frame
     fig, ax = plt.subplots()
-    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+    canvas = FigureCanvasTkAgg(fig, master=graph_sub_frame)
     canvas_widget = canvas.get_tk_widget()
-    canvas_widget.grid(row=0, column=2, sticky="nsew")
-    graph_frame.update_idletasks()
-    
+    canvas_widget.grid(row=0, column=0, sticky="nsew")
+    graph_sub_frame.grid_columnconfigure(0, weight=4)
+    graph_sub_frame.grid_columnconfigure(1, weight=1)
+
+    # Create the message frame on the right side of the sub-frame
+    message_frame = tk.Frame(graph_sub_frame, bg="lightgray", width=200)
+    message_frame.grid(row=0, column=1, sticky="nsew")
+    graph_sub_frame.grid_rowconfigure(0, weight=1)
+
+    # Add the Text widget to the message frame
+    message_widget = scrolledtext.ScrolledText(message_frame, wrap=tk.WORD, bg="lightgray", width=40)
+    message_widget.pack(expand=True, fill='both')
+
     return graph_frame
 
 # Function to get data from backend in a separate thread
@@ -119,6 +148,7 @@ def generate_data_thread():
         root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
     except Exception as e:
         print(f"An error occurred: {e}")
+        log_message(f"An error occurred: {e}")
         root.after(0,stop_progress_bar)
 
 # Function to draw the graph with new data
@@ -138,6 +168,11 @@ def draw_graph(data, Selected_Part, Selected_Specification):
     
     # Create new graph frame
     graph_frame = setup_graph()
+    
+    # Log plot data to the message box
+    log_message("Plot Data:")
+    log_message(plot_data.to_string())
+
     ax.plot(xs, ys, color = "maroon")
 
     if Selected_Part in DOTTER_SPECIFICATIONS:
@@ -429,10 +464,8 @@ save_button.grid(row=2, column=1, padx=10, pady=5)
 clear_button = tk.Button(frame4, text="Clear input", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
 clear_button.grid(row=3, column=1, padx=10, pady=5)
 
-
+# Overwrite the on_closing function to restore stdout
 def on_closing():
-    """I was having issues with the application not closing all the way when I pressed the X button on the GUI.
-    This function fixed that."""
     plt.close('all')  # Close all Matplotlib figures
     root.destroy()  # Destroy the Tkinter window
 
