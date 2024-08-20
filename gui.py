@@ -130,7 +130,7 @@ def generate_data_thread():
         Selected_Specification = var2.get()
         VCC = spinbox_vcc.get()
         VEE = spinbox_vee.get()
-        Temperature = textbox_temp.get() # at the moment, the backend can't use this
+        Temperature = spinbox_temp.get() # at the moment, the backend can't use this
         Fluence_Min = spinbox_fluences_min.get()
         Fluence_Max = spinbox_fluences_max.get()
         
@@ -239,7 +239,6 @@ def save_plot_data():
     else:
         print('No data to save')
 
-
 # Clear function 
 def clear_function():
     # Clear spinbox entries
@@ -264,17 +263,28 @@ def clear_function():
             widget.destroy()
 
 # Frame 0
-frame0 = create_frame(0,0,"",width=10,height= 2,borderwidth=0, padx=0, pady=0, bg="gold")
+frame0 = create_frame(0, 0, "", width=10, height=2, borderwidth=0, padx=0, pady=0, bg="gold")
+
+# ASU logo
 asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
-asu_logo_resized = asu_logo.resize((144, 81), Image.LANCZOS)  
+asu_logo_resized = asu_logo.resize((144, 81), Image.LANCZOS)
 asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
 
-canvas = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
-canvas.create_image(0, 0, anchor="nw", image=asu_logo_tk)
-canvas.pack(anchor="n", padx=2, pady=2)
+canvas_asu = tk.Canvas(frame0, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas_asu.create_image(0, 0, anchor="nw", image=asu_logo_tk)
+canvas_asu.pack(side="left", anchor="w", padx=10, pady=2)  # Padding on left side
+
+# Sandia logo
+sandia_logo = Image.open(exe_tools.adjust_path('images/Sandia_logo.png'))
+sandia_logo_resized = sandia_logo.resize((144, 81), Image.LANCZOS)
+sandia_logo_tk = ImageTk.PhotoImage(sandia_logo_resized)
+
+canvas_sandia = tk.Canvas(frame0, width=sandia_logo_tk.width(), height=sandia_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas_sandia.create_image(0, 0, anchor="nw", image=sandia_logo_tk)
+canvas_sandia.pack(side="right", anchor="e", padx=10, pady=2)  # Padding on right side
 
 # Set column 0 to expand
-root.grid_columnconfigure(0, weight=1)  
+root.grid_columnconfigure(0, weight=1)
 
 # Frame 1
 frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
@@ -351,7 +361,7 @@ def update_default_voltage(*args):
     # Clear the current values
     spinbox_vcc.delete(0, tk.END)
     spinbox_vee.delete(0, tk.END)
-    textbox_temp.delete(0, tk.END)
+    spinbox_temp.delete(0, tk.END)
     spinbox_fluences_min.delete(0, tk.END)
     spinbox_fluences_max.delete(0, tk.END)
 
@@ -364,7 +374,7 @@ def update_default_voltage(*args):
         spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
 
     spinbox_vcc.insert(0, default_voltage)  # Set VCC
-    textbox_temp.insert(0, "25")  # Set default temperature
+    spinbox_temp.insert(0, 25)  # Set default temperature
     spinbox_fluences_min.insert(0, 4.03)  # Set default Fluence Min
     spinbox_fluences_max.insert(0, 4.50)  # Set default Fluence Max
     
@@ -383,11 +393,11 @@ spinbox_vee.grid(row=1, column=1, sticky="w")
 label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_temp.grid(row=2, column=0, sticky="e")
 
-# Text Entry for Temperature with border and padding
-validate_temp = (root.register(validate_numerical), '%P')
-textbox_temp = ttk.Entry(frame2, style="TEntry", validate="key", validatecommand=validate_temp, width=7)
-textbox_temp.insert(0,"25")
-textbox_temp.grid(row=2, column=1, sticky="w")
+spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
+spinbox_temp.grid(row=2, column=1, sticky="w")
+
+label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="red")
+label_temp_temp.grid(row=2, column=2, sticky="e")
 
 # Frame 3
 frame3 = create_frame(2, 4, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
@@ -415,7 +425,7 @@ label_fluences_range1.grid(row=1, column=2, sticky="e")
 label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 
-spinbox_fluences_max = tk.Spinbox(frame3, from_=4.50, to=4.55, increment=0.01, width=10)
+spinbox_fluences_max = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
 spinbox_fluences_max.grid(row=2, column=1, sticky="w")
 label_fluences_range2 = tk.Label(frame3, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range2.grid(row=2, column=2, sticky="e")

@@ -32,9 +32,9 @@ class PDFViewer(tk.Toplevel):
         self.btn_exit = tk.Button(self, text="Exit Fullscreen", command=self.exit_fullscreen, bg="red", fg="white")
 
         self.btn_prev.pack(side=tk.LEFT, padx=10, pady=10)
+        self.btn_next.pack(side=tk.LEFT, padx=10, pady=10)
         self.btn_zoom_out.pack(side=tk.LEFT, padx=10, pady=10)
         self.btn_zoom_in.pack(side=tk.LEFT, padx=10, pady=10)
-        self.btn_next.pack(side=tk.RIGHT, padx=10, pady=10)
         self.btn_exit.pack(side=tk.BOTTOM, pady=10)
 
     def show_page(self):
