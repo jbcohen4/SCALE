@@ -317,6 +317,9 @@ datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_Specifications.grid(row=1, column=0, sticky="e")
 
+label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="black")
+label_Specification_Typical.grid(row=1, column=2, sticky="e")
+
 # Dropdown Specifications
 selected_part = options_part[0]
 options_specifications = DROPDOWN_MAPPING[selected_part]
@@ -335,8 +338,27 @@ def update_dropdown_specifications(*args):
         dropdown_specifications['menu'].add_command(label=spec, command=tk._setit(var2, spec))
     var2.set(options_specifications[0])  # Set default value for var2
 
+# Function to update the specification label based on the selected part and specification
+def update_specification_label(*args):
+    selected_part = var1.get()
+    selected_specification = var2.get()
+
+    # Check if the part and specification are in the DOTTER_SPECIFICATIONS dictionary
+    if selected_part in DOTTER_SPECIFICATIONS:
+        if selected_specification in DOTTER_SPECIFICATIONS[selected_part]:
+            typical_value = DOTTER_SPECIFICATIONS[selected_part][selected_specification]["typical"]
+            label_Specification_Typical.config(text=f"Typical value = {typical_value}")
+        else:
+            label_Specification_Typical.config(text="")  # Clear if specification is not found
+    else:
+        label_Specification_Typical.config(text="")  # Clear if part is not found
+
 # Trace changes in Dropdown 1 and update Dropdown 2 accordingly
 var1.trace_add('write', update_dropdown_specifications)
+var1.trace_add('write', update_specification_label)
+
+# Trace changes in Dropdown 2 and update the label accordingly
+var2.trace_add('write', update_specification_label)
 
 # Progress Bar
 progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
@@ -419,6 +441,8 @@ label_fluences_min.grid(row=1, column=0, sticky="e")
 
 spinbox_fluences_min = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
 spinbox_fluences_min.grid(row=1, column=1, sticky="w")
+# scale_fluences_min = tk.Scale(frame3, from_=4.03, to=450, resolution=0.01, orient=tk.HORIZONTAL, length=100)
+# scale_fluences_min.grid(row=1, column=1, sticky="w")
 label_fluences_range1 = tk.Label(frame3, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range1.grid(row=1, column=2, sticky="e")
 
@@ -427,6 +451,8 @@ label_fluences_max.grid(row=2, column=0, sticky="e")
 
 spinbox_fluences_max = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
 spinbox_fluences_max.grid(row=2, column=1, sticky="w")
+# scale_fluences_max = tk.Scale(frame3, from_=4.03, to=450, resolution=0.01, orient=tk.HORIZONTAL, length=100)
+# scale_fluences_max.grid(row=2, column=1, sticky="w")
 label_fluences_range2 = tk.Label(frame3, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
 label_fluences_range2.grid(row=2, column=2, sticky="e")
 
