@@ -131,8 +131,8 @@ def generate_data_thread():
         VCC = spinbox_vcc.get()
         VEE = spinbox_vee.get()
         Temperature = spinbox_temp.get() # at the moment, the backend can't use this
-        Fluence_Min = spinbox_fluences_min.get()
-        Fluence_Max = spinbox_fluences_max.get()
+        Fluence_Min = fluence_min_var.get()
+        Fluence_Max = fluence_max_var.get()
         
         # validate data and put in default values as needed
         if Selected_Part in ("AD590", "LM193", "LM139"):
@@ -141,8 +141,8 @@ def generate_data_thread():
         else:
             VCC = 15.0 if VCC == "" else float(VCC)
             VEE = -15.0 if VEE == "" else float(VEE)
-        Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min) * 10 ** 11
-        Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max) * 10 ** 13
+        Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min)
+        Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max)
 
         data = backend.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
         root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
@@ -248,13 +248,7 @@ def clear_function():
     spinbox_vee.delete(0, tk.END)
     spinbox_vee.insert(0, 'NA')  
 
-    textbox_temp.delete(0, tk.END)
-
-    spinbox_fluences_min.delete(0, tk.END)
-    spinbox_fluences_min.insert(0, 4.03)  
-
-    spinbox_fluences_max.delete(0, tk.END)
-    spinbox_fluences_max.insert(0, 4.50)  
+    spinbox_temp.delete(0, tk.END) 
     print("Clear all the fields")
 
     # Find and destroy the existing graph frame
@@ -380,25 +374,25 @@ label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
 #set default VCC & VEE based on spec
 def update_default_voltage(*args):
-    # Clear the current values
+    # Clear the current values of all spinboxes
     spinbox_vcc.delete(0, tk.END)
     spinbox_vee.delete(0, tk.END)
     spinbox_temp.delete(0, tk.END)
-    spinbox_fluences_min.delete(0, tk.END)
-    spinbox_fluences_max.delete(0, tk.END)
 
-    # Set default values based on the selected part
+    # Determine if the selected part requires VEE to be 'NA' or a numeric value
     if var1.get() in ('AD590', 'LM193', 'LM139'):
         default_voltage = 5
-        spinbox_vee.insert(0, 'NA')  # Assuming VEE should be 'NA' for these parts
+        spinbox_vee.insert(0, 'NA')  # Set VEE to 'NA'
+        spinbox_vee.config(state='disabled')  # Disable VEE spinbox
     else:
         default_voltage = 15
+        spinbox_vee.config(state='normal')  # Enable VEE spinbox
+        spinbox_vee.delete(0, tk.END)
         spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
 
-    spinbox_vcc.insert(0, default_voltage)  # Set VCC
+    # Set VCC, temperature, and fluence values
+    spinbox_vcc.insert(0, default_voltage)  # Set default VCC
     spinbox_temp.insert(0, 25)  # Set default temperature
-    spinbox_fluences_min.insert(0, 4.03)  # Set default Fluence Min
-    spinbox_fluences_max.insert(0, 4.50)  # Set default Fluence Max
     
 # Bind the update_default_voltage function to changes in var1 (the part selection)
 var1.trace_add('write', update_default_voltage)
@@ -438,23 +432,42 @@ neutron_type_uom.grid(row=0, column=2, sticky="e")
 
 label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
-
-spinbox_fluences_min = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
-spinbox_fluences_min.grid(row=1, column=1, sticky="w")
-# scale_fluences_min = tk.Scale(frame3, from_=4.03, to=450, resolution=0.01, orient=tk.HORIZONTAL, length=100)
-# scale_fluences_min.grid(row=1, column=1, sticky="w")
-label_fluences_range1 = tk.Label(frame3, text="e^11", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-label_fluences_range1.grid(row=1, column=2, sticky="e")
+# formattign the fluences
+formatted_fluences = [f"{fluence:.2E}" for fluence in FLUENCES]
+fluence_min_var = StringVar(root)
+fluence_min_var.set(formatted_fluences[0])
+# Create OptionMenu dropdowns for Fluence Min
+fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences, height=10, width=10)  # Limiting dropdown height to 10 items
+fluence_min_combobox.grid(row=1, column=1, sticky="w")
 
 label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
+fluence_max_var = StringVar(root)
+fluence_max_var.set(formatted_fluences[-1])
+fluence_max_combobox = ttk.Combobox(frame3, textvariable=fluence_max_var, values=formatted_fluences, height=10, width=10)  # Limiting dropdown height to 10 items
+fluence_max_combobox.grid(row=2, column=1, sticky="w")
 
-spinbox_fluences_max = tk.Spinbox(frame3, from_=4.03, to=4.50, increment=0.01, width=10)
-spinbox_fluences_max.grid(row=2, column=1, sticky="w")
-# scale_fluences_max = tk.Scale(frame3, from_=4.03, to=450, resolution=0.01, orient=tk.HORIZONTAL, length=100)
-# scale_fluences_max.grid(row=2, column=1, sticky="w")
-label_fluences_range2 = tk.Label(frame3, text="e^13", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-label_fluences_range2.grid(row=2, column=2, sticky="e")
+# Function to update the max fluence value based on the min fluence value
+def update_fluence_constraints(*args):
+    # Get the current selected values
+    min_fluence = float(fluence_min_var.get())
+    max_fluence = float(fluence_max_var.get())
+
+    # Check if the max fluence is less than or equal to min fluence
+    if max_fluence <= min_fluence:
+        # Find the next possible max value that is greater than min fluence
+        next_max_index = formatted_fluences.index(f"{min_fluence:.2E}") + 1
+        
+        # Check if the next index is within range
+        if next_max_index < len(formatted_fluences):
+            fluence_max_var.set(formatted_fluences[next_max_index])
+        else:
+            # If no higher value exists, reset to the first higher option
+            fluence_max_var.set(formatted_fluences[-1])
+
+# Bind the function to check fluence constraints whenever a selection is made
+fluence_min_var.trace_add('write', update_fluence_constraints)
+fluence_max_var.trace_add('write', update_fluence_constraints)
 
 # Call the function initially to set defaults for the first selected part
 update_default_voltage()

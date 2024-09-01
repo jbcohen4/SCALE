@@ -1,4 +1,0 @@
-Voltage: 5.0
-Temperature: 
-Fluence Min: 0.2
-Fluence Max: 4
