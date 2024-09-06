@@ -131,8 +131,8 @@ def generate_data_thread():
         VCC = spinbox_vcc.get()
         VEE = spinbox_vee.get()
         Temperature = spinbox_temp.get() # at the moment, the backend can't use this
-        Fluence_Min = fluence_min_var.get()
-        Fluence_Max = fluence_max_var.get()
+        Fluence_Min = fluence_mapping[fluence_min_var.get()]
+        Fluence_Max = fluence_mapping[fluence_max_var.get()]
         
         # validate data and put in default values as needed
         if Selected_Part in ("AD590", "LM193", "LM139"):
@@ -178,14 +178,10 @@ def draw_graph(data, Selected_Part, Selected_Specification):
     if Selected_Part in DOTTER_SPECIFICATIONS:
         if Selected_Specification in DOTTER_SPECIFICATIONS[Selected_Part]:
             dotted_line_min = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["min"]
-            dotted_line_typical = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["typical"]
             dotted_line_max = DOTTER_SPECIFICATIONS[Selected_Part][Selected_Specification]["max"]
             if dotted_line_min:
                 ax.axhline(y= dotted_line_min , color = "black", linestyle = "--")
                 ax.text(1.02, dotted_line_min, f"min: {dotted_line_min}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
-            if dotted_line_typical:
-                ax.axhline(y= dotted_line_typical , color = "black", linestyle = "--")
-                ax.text(1.02, dotted_line_typical, f"typ: {dotted_line_typical}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
             if dotted_line_max:
                 ax.axhline(y= dotted_line_max , color = "black", linestyle = "--")
                 ax.text(1.02, dotted_line_max, f"max: {dotted_line_max}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
@@ -433,18 +429,19 @@ neutron_type_uom.grid(row=0, column=2, sticky="e")
 label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_min.grid(row=1, column=0, sticky="e")
 # formattign the fluences
-formatted_fluences = [f"{fluence:.2E}" for fluence in FLUENCES]
+fluence_mapping = {f"{fluence:.2E}": backend for fluence, backend in zip(FLUENCES, BACKEND_FLUENCES)}
+formatted_fluences = list(fluence_mapping.keys())
 fluence_min_var = StringVar(root)
 fluence_min_var.set(formatted_fluences[0])
 # Create OptionMenu dropdowns for Fluence Min
-fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences, height=10, width=10)  # Limiting dropdown height to 10 items
+fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences[:-1], height=10, width=10)  # Limiting dropdown height to 10 items
 fluence_min_combobox.grid(row=1, column=1, sticky="w")
 
 label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
 label_fluences_max.grid(row=2, column=0, sticky="e")
 fluence_max_var = StringVar(root)
 fluence_max_var.set(formatted_fluences[-1])
-fluence_max_combobox = ttk.Combobox(frame3, textvariable=fluence_max_var, values=formatted_fluences, height=10, width=10)  # Limiting dropdown height to 10 items
+fluence_max_combobox = ttk.Combobox(frame3, textvariable=fluence_max_var, values=formatted_fluences[1:], height=10, width=10)  # Limiting dropdown height to 10 items
 fluence_max_combobox.grid(row=2, column=1, sticky="w")
 
 # Function to update the max fluence value based on the min fluence value
