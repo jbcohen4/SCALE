@@ -113,9 +113,11 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
         write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+        print(temp_netlist_filename)
         stdout, stderr, return_code = run_command(cmd_string)
+        print(stdout, stderr, return_code)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        # print(out_text)
+        print(out_text)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -141,10 +143,14 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             temp_xyce_output_filename = xyce_output_file.name
             d = {
                 "output_filename": temp_xyce_output_filename,
-                "PNP_IS": row_pnp['Is'],
-                "PNP_N": row_pnp['n'],
-                "NPN_IS": row_npn['Is'],
-                "NPN_N": row_npn['n']
+                "PNP_IS_1": row_pnp['Is_1'],
+                "PNP_N_1": row_pnp['n_1'],
+                "PNP_IS_2": row_pnp['Is_2'],
+                "PNP_N_2": row_pnp['n_2'],
+                "NPN_IS_1": row_npn['Is_1'],
+                "NPN_N_1": row_npn['n_1'],
+                "NPN_IS_2": row_npn['Is_2'],
+                "NPN_N_2": row_npn['n_2']
             }
             if vos is not None:  # Add vos to the dictionary only if vos_list is not None
                 d["Vos"] = round(vos,3)
@@ -156,8 +162,11 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
+            print(f"Row {row_index} completed with return code {stdout}")
+            print(f"Row {row_index} completed with return code {stderr}")
+            
             out_text = read_file_as_string(temp_xyce_output_filename)
-            # print(out_text)
+
             assert len(out_text) > 0
             return (avg_fluences, out_text)
         finally:
@@ -186,6 +195,7 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
 def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(AD590_NETLIST_TEMPLATE) if fluences_min <= fluence <= fluences_max]
     xs, ys = [], []
+    print('Xyce_ouptut:',xyce_output)
     for fluence, out_txt in xyce_output:
         parsed_output = parse_output_data_dynamic(out_txt)
         for row in parse_output_data_dynamic(out_txt):
@@ -202,11 +212,14 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
     }
 
 def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: str):
+    print("processing LM741")
     subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM741_SUBCKT_POST_RAD_TEMPLATE
     testbench = process_string_with_replacements(LM741_CLUDGE_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     full_netlist = testbench + "\n" + subcircuit
+    # print("pre_rad_full_netlist:",pre_rad_full_netlist)
+    # print("full_netlist:",full_netlist)
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
     all_xyce_output = get_all_xyce_output_txt(full_netlist)
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
@@ -508,13 +521,15 @@ def generate_data_for_LM111_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         #         file.write(out_text)
         #     store = True
         parsed_output = parse_output_data_dynamic(out_text)
+        vos_flag = False
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
-            if V_os ==  0:
+            if V_os == 0:
                 fluences.append(fluence)
                 i_ib.append(I_ib * 10 ** 9) # amps to nA
                 i_os.append(I_os * 10 ** 9) # amps to nA
-            if V_out > 4.89:
+                vos_flag = True
+            if V_out > 4.89 and vos_flag:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 break
         else:
