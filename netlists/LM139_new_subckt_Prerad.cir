@@ -1,0 +1,96 @@
+*Subcircuit name: LM139_sc POSTRAD
+**************************
+.subckt LM139_sc 12 1 7 13
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+Q1         0 1 2 SPMOD 0.04 temp=25
+Q2         3 2 4 LPNP_compact 0.9 temp=25
+Q3         5 6 4 LPNP_compact 0.9 temp=25
+Q4         0 7 6 SPMOD 0.04 temp=25
+Q5         3 3 0 NPN_compact 0.9 temp=25
+Q6         5 3 0 NPN_compact 0.9 temp=25
+Q7         8 5 0 NPN_compact 0.3 temp=25
+Q8         13 8 0 NPN_compact 10 temp=25
+Q9         8 11 12 LPNP_compact 0.8 temp=25
+Q10        14 11 12 LPNP_compact 0.8 temp=25
+Q11        14 11 12 LPNP_compact 0.8 temp=25
+Q12        15 11 12 LPNP_compact 0.1 temp=25
+Q13        9 11 12 LPNP_compact 0.1 temp=25
+Q14        4 11 12 LPNP_compact 0.5 temp=25
+Q15        14 14 10 NPN_compact 0.4 temp=25
+Q16        10 10 0 NPN_compact 0.4 temp=25
+Q17        2 2 1 LPNP_compact 0.7 temp=25
+Q18        2 2 15 LPNP_compact 0.7 temp=25
+Q19        6 6 9 LPNP_compact 0.7 temp=25
+Q20        6 6 7 LPNP_compact 0.7 temp=25
+
+*Resistance: R<name> <+ node> <- node> [model name] <value>
+R1          14 0 1K
+R2          12 14 10 
+
+.model NPN_COMPACT NPN(               
++IS=2.354912E-16
++BF=84.058
++NF=0.986787     
++VAF=351.9861415
++IKF=9.86E-3
++NK=0.47574  
++ISE=7.1029E-15
++NE=2.06453  
++BR=0.697       
++NR=2
++VAR=100
++IKR=0.1         
++ISC=1E-17
++NC=2                          
++RB=140.86       
++IRB=1E-3 
++RBM=50                        
++RE=2           
++RC=250.75)
+
+.model LPNP_compact PNP (
++IS=7.40964E-16
++BF=90.9
++NF=0.99         
++VAF=36.3423711
++IKF=1.30957E-4  
++NK=0.52
++ISE=6E-16
++NE=1.27089 
++BR=0.697 
++NR=2
++VAR=100  
++IKR=0.1 
++ISC=1E-17
++ NC=2    
++RB=758.578   
++IRB=3.6E-5
++ RBM=100    
++RE=4.096  
++RC=1)
+ 
+.model SPMOD PNP(
++ IS=11E-15
++ BF=8500
++ NF=0.99
++ VAF=36.3423711
++ IKF=900E-6
++ NK=0.52
++ ISE=0.08E-15 
++ NE=1.3
++ BR=0.697
++ NR=2
++ VAR=100
++ IKR=0.1
++ ISC=1E-17
++ NC=2
++ RB=3058.578 
++ IRB=3.6E-5
++ RBM=100
++ RE=4
++ RC=1)
+
+
+*end of the list
+.end
