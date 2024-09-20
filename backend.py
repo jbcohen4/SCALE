@@ -113,11 +113,11 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
         write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
-        print(temp_netlist_filename)
+        # print(temp_netlist_filename)
         stdout, stderr, return_code = run_command(cmd_string)
-        print(stdout, stderr, return_code)
+        # print(stdout, stderr, return_code)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        print(out_text)
+        # print(out_text)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -162,8 +162,8 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
-            print(f"Row {row_index} completed with return code {stdout}")
-            print(f"Row {row_index} completed with return code {stderr}")
+            # print(f"Row {row_index} completed with return code {stdout}")
+            # print(f"Row {row_index} completed with return code {stderr}")
             
             out_text = read_file_as_string(temp_xyce_output_filename)
 
@@ -673,7 +673,7 @@ def generate_data_for_LM193_VOS_Old_calculation(VCC, VEE, fluence_min, fluence_m
         if V_out >  4.89 :
             v_os.append(V_os * 10 ** 3) # volts to mV
             break
-    
+
     # process for post_rad
     store = False
     for fluence, out_text in xyce_output:
