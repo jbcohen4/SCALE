@@ -1,4 +1,5 @@
 import exe_tools
+import pandas as pd
 
 XYCE_EXE_PATH = exe_tools.adjust_path("xyce/Xyce.exe")
 # paths for the AD590
@@ -49,10 +50,6 @@ DROPDOWN_MAPPING = {
     "LM111" : ["V_os", "I_ib", "I_os"]
 }
 
-# List to store the types of Neutrons
-NEUTRON_TYPE = ["1MeV"]
-
-
 # object to store values of the specifications for dotter plot
 DOTTER_SPECIFICATIONS = {
     "AD590": {
@@ -90,6 +87,9 @@ DOTTER_SPECIFICATIONS = {
     }
 }
 
+# List to store the types of Neutrons
+NEUTRON_TYPE = ["1MeV"]
+
 # fluence values 
 FLUENCES = [
     4.04E+11, 4.33E+11, 4.64E+11, 4.98E+11, 5.34E+11, 5.72E+11, 6.14E+11,
@@ -119,3 +119,67 @@ BACKEND_FLUENCES = [
     2.658045e+13, 2.849020e+13, 3.051930e+13, 3.272275e+13, 3.510595e+13, 3.762470e+13,
     4.038510e+13, 4.329380e+13, 4.640795e+13
 ]
+
+# List to store the radtion doses for TID
+TID_DOSES = ["DR=0.01_H2=0.1_B=0", "DR=0.1_H2=100_B=0", "DR=100_H2=100_B=0"]
+
+# TID MAPPING 
+TID_MAPPING = {
+    "DR=0.01_H2=0.1_B=0": ["csvs/TID_NPN_SHEET1_V0.csv","csvs/TID_PNP_SHEET1_V0.csv"],
+    "DR=0.1_H2=100_B=0": ["csvs/TID_NPN_SHEET2_V0.csv","csvs/TID_PNP_SHEET2_V0.csv"],
+    "DR=100_H2=100_B=0": ["csvs/TID_NPN_SHEET3_V0.csv","csvs/TID_PNP_SHEET3_V0.csv"]
+}
+
+# NPN & PNP selection based on TID input
+NPN_DF_TID = None
+PNP_DF_TID = None
+TID_DOSE_MIN = None
+TID_DOSE_MAX = None
+
+def update_tid_dataframes(selection_key):
+    global NPN_DF_TID, PNP_DF_TID
+    if selection_key in TID_MAPPING:
+        npn_file_path = TID_MAPPING[selection_key][0]
+        pnp_file_path = TID_MAPPING[selection_key][1]
+
+        NPN_DF_TID = exe_tools.read_csv_to_df(npn_file_path)
+        PNP_DF_TID = exe_tools.read_csv_to_df(pnp_file_path)
+        
+        # function to calculate the min and max dose
+        calculate_min_max_dose(NPN_DF_TID, PNP_DF_TID)
+    else:
+        print(f"Invalid selection key:{ selection_key }")
+
+def calculate_min_max_dose(npn_df, pnp_df):
+    global TID_DOSE_MIN, TID_DOSE_MAX
+    # Convert 'Is' column to numeric and remove rows where 'Is' is NaN
+    npn_df["Is"] = pd.to_numeric(npn_df["Is"], errors='coerce')
+    npn_df = npn_df.dropna(subset=["Is"])
+
+    pnp_df["Is"] = pd.to_numeric(pnp_df["Is"], errors='coerce')
+    pnp_df = pnp_df.dropna(subset=["Is"])
+
+    # Select rows where 'Is' is greater than 0 directly on the DataFrame to avoid misalignment issues
+    npn_first_non_zero_row = npn_df.loc[npn_df["Is"] > 0].iloc[0]
+    npn_max_row = npn_df.loc[npn_df["Is"] > 0].iloc[-1]
+
+    pnp_first_non_zero_row = pnp_df.loc[pnp_df["Is"] > 0].iloc[0]
+    pnp_max_row = pnp_df.loc[pnp_df["Is"] > 0].iloc[-1]
+
+    # Get the dose values from the 'delta_Ib_column'
+    npn_min_dose = npn_first_non_zero_row["Dose(krad)"]
+    npn_max_dose = npn_max_row["Dose(krad)"]
+
+    pnp_min_dose = pnp_first_non_zero_row["Dose(krad)"]
+    pnp_max_dose = pnp_max_row["Dose(krad)"]
+
+    # Calculate global minimum and maximum dose
+    TID_DOSE_MIN = min(npn_min_dose, pnp_min_dose)
+    TID_DOSE_MAX = max(npn_max_dose, pnp_max_dose)
+    # print(f"Min dose: {TID_DOSE_MIN}, Max dose: {TID_DOSE_MAX}")
+
+def get_tid_dataframes():
+    return NPN_DF_TID, PNP_DF_TID
+
+def get_tid_dose_limits():
+    return (TID_DOSE_MIN, TID_DOSE_MAX)
