@@ -120,6 +120,17 @@ BACKEND_FLUENCES = [
     4.038510e+13, 4.329380e+13, 4.640795e+13
 ]
 
+# Values for TID parameters
+DOSE_RATE = [0.01,0.1,100]
+HYDROGEN = [0.1,100]
+BIAS = [0]
+
+# valid combination between the TID parameters
+VALID_TID_COMBINATIONS = {
+    0.01: [0.1],
+    0.1: [100],
+    100: [100]
+}
 # List to store the radtion doses for TID
 TID_DOSES = ["DR=0.01_H2=0.1_B=0", "DR=0.1_H2=100_B=0", "DR=100_H2=100_B=0"]
 

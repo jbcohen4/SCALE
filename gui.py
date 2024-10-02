@@ -632,8 +632,8 @@ def create_tid_gui():
             VCC = spinbox_vcc.get()
             VEE = spinbox_vee.get()
             Temperature = spinbox_temp.get() # at the moment, the backend can't use this
-            Fluence_Min = total_dose_min_var.get()
-            Fluence_Max = total_dose_max_var.get()
+            tid_min = total_dose_min_var.get()
+            tid_max = total_dose_max_var.get()
             
             # validate data and put in default values as needed
             if Selected_Part in ("AD590", "LM193", "LM139"):
@@ -642,14 +642,17 @@ def create_tid_gui():
             else:
                 VCC = 15.0 if VCC == "" else float(VCC)
                 VEE = -15.0 if VEE == "" else float(VEE)
-            Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min)
-            Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max)
+            tid_min = -INFINITY if tid_min == "" else float(tid_min)
+            tid_max = +INFINITY if tid_max == "" else float(tid_max)
 
-            data = backend_tid.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
+            data = backend_tid.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, tid_min, tid_max)
             root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
         except Exception as e:
             print(f"An error occurred: {e}")
-            # log_message(f"An error occurred: {e}")
+            print(data)
+            stop_progress_bar()
+            setup_graph()
+            log_message(f"An error occurred: {e}")
             root.after(0,stop_progress_bar)
 
     # Function to draw the graph with new data
@@ -687,17 +690,17 @@ def create_tid_gui():
                     ax.axhline(y= dotted_line_max , color = "black", linestyle = "--")
                     ax.text(1.02, dotted_line_max, f"max: {dotted_line_max}", color="black", ha='left', va='center', fontsize=8, transform=ax.get_yaxis_transform())
 
-        ax.set_xscale('log') # Set the x-axis to log scale
+        ax.set_xscale('linear') # Set the x-axis to linear scale for TID
         ax.set_yscale(current_y_scale)  # Set the y-axis to current scale - which is linear in begining.
         ax.set_xlabel(x_axis_name)
         ax.set_ylabel(y_axis_name)
 
         # Define a custom formatter function
         def custom_formatter(x, pos):
-            if x == 1e11:  # Check if the tick is at 10^11
+            if x == 0:  # Check if the tick is at 0
                 return 'pre_rad'
             else:
-                return f'{x:.0e}'  # Default scientific notation
+                return x  # show original TID value on x axis
 
         # Apply the custom formatter to the x-axis
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(custom_formatter))
@@ -749,7 +752,7 @@ def create_tid_gui():
         print("Clear all the fields")
 
         # Find and destroy the existing graph frame
-        for widget in root.winfo_children():
+        for widget in tid_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
                 widget.destroy()
 
@@ -892,54 +895,86 @@ def create_tid_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    label_tid_type = tk.Label(frame3, text="Input:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    label_tid_type.grid(row=0, column=0, sticky="e")
+    frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 
-    # Dropdown Radtion Doses
-    options_TID = TID_DOSES
-    var_tid = StringVar()
-    var_tid.set(options_TID[0])
+    # Dose Rate Label and DropDown
+    label_dr_type = tk.Label(frame3, text="Dose Rate:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dr_type.grid(row=0, column=0, sticky="e")
+    options_dr = DOSE_RATE
+    var_dr = StringVar()
+    var_dr.set(options_dr[0])
+    dropdown_dr = OptionMenu(frame3, var_dr, *options_dr)
+    dropdown_dr.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_dr.config(bg="white")
 
-    dropdown_tid = OptionMenu(frame3, var_tid, *options_TID)
-    dropdown_tid.grid(row=0, column=1, sticky="w", padx=5, pady=5)
-    dropdown_tid.config(bg="white")
-    # tid_type_uom = tk.Label(frame3, text="Krad.", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    # tid_type_uom.grid(row=0, column=2, sticky="e")
+    # Hydrogen label and DropDown
+    label_h2_type = tk.Label(frame3, text="Hydrogen:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_h2_type.grid(row=0, column=2, sticky="e")
+    options_h2 = HYDROGEN
+    var_h2 = StringVar()
+    var_h2.set(options_h2[0])
+    dropdown_h2 = OptionMenu(frame3, var_h2, *options_h2)
+    dropdown_h2.grid(row=0, column=3, sticky="w", padx=5, pady=5)
+    dropdown_h2.config(bg="white")
+
+    # Bias label and DropDown
+    label_bi_type = tk.Label(frame3, text="Bias:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_bi_type.grid(row=1, column=0, sticky="e")
+    options_bi = BIAS
+    var_bi = StringVar()
+    var_bi.set(options_bi[0])
+    dropdown_bi = OptionMenu(frame3, var_bi, *options_bi)
+    dropdown_bi.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+    dropdown_bi.config(bg="white")
 
     total_dose_min_var = StringVar()
     total_dose_max_var = StringVar()
+    
+    # form the combined argumetn to get the TID values
+    def form_argument_key():
+        dose_rate = var_dr.get()
+        hydrogen = var_h2.get()
+        bias = var_bi.get()
+        argument_string = f"DR={dose_rate}_H2={hydrogen}_B={bias}"
+        return argument_string
+
     # Use *args to capture the event parameters]
-    def on_tid_selection_change(*args):
-        selected_value = var_tid.get()
-        update_tid_dataframes(selected_value)
+    def update_hydrogen(*args):
+        selected_dose_rate = float(var_dr.get())
+        hydrogen_values = VALID_TID_COMBINATIONS[selected_dose_rate]
+        menu = dropdown_h2['menu']
+        menu.delete(0, 'end')
+        for value in hydrogen_values:
+            menu.add_command(label=value, command=lambda v = value: var_h2.set(v))
+        var_h2.set(hydrogen_values[0])
+        
+        # Calling update function with the default value when the dropdown is created
+        combined_key = form_argument_key() 
+        update_tid_dataframes(combined_key)
         
         # Calling fucntion to update the tid dose min and max values 
         TID_VALUES = get_tid_dose_limits()
         total_dose_min, total_dose_max = TID_VALUES
         total_dose_min_var.set(total_dose_min)
         total_dose_max_var.set(total_dose_max)
-
-    # Binding function to changes in the dropdown value
-    var_tid.trace_add('write', on_tid_selection_change)
-
-    # Calling update function with the default value when the dropdown is created
-    on_tid_selection_change()  
     
+    # Function to update the TID dataframes based on the selected dose rate
+    var_dr.trace_add('write', update_hydrogen)
+
     # Calling update function with the default value when the dropdown is created
-    update_tid_dataframes(var_tid.get())
+    update_hydrogen()  
 
     label_total_dose_min = tk.Label(frame3, text="Total Dose Min(krad):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_total_dose_min.grid(row=1, column=0, sticky="e")
+    label_total_dose_min.grid(row=2, column=0, sticky="e")
 
     total_dose_min_combobox = ttk.Combobox(frame3, textvariable=total_dose_min_var, values=[], height=10, width=10) 
-    total_dose_min_combobox.grid(row=1, column=1, sticky="w")
+    total_dose_min_combobox.grid(row=2, column=1, sticky="w")
 
     label_total_dose_max = tk.Label(frame3, text="Total Dose Max(krad)):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_total_dose_max.grid(row=2, column=0, sticky="e")
+    label_total_dose_max.grid(row=3, column=0, sticky="e")
 
     total_dose_max_combobox = ttk.Combobox(frame3, textvariable=total_dose_max_var, values=[], height=10, width=10)  
-    total_dose_max_combobox.grid(row=2, column=1, sticky="w")
+    total_dose_max_combobox.grid(row=3, column=1, sticky="w")
 
     # Call the function initially to set defaults for the first selected part
     update_default_voltage()
