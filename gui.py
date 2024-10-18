@@ -898,7 +898,7 @@ def create_tid_gui():
     frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 
     # Dose Rate Label and DropDown
-    label_dr_type = tk.Label(frame3, text="Dose Rate:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
     label_dr_type.grid(row=0, column=0, sticky="e")
     options_dr = DOSE_RATE
     var_dr = StringVar()
@@ -908,23 +908,23 @@ def create_tid_gui():
     dropdown_dr.config(bg="white")
 
     # Hydrogen label and DropDown
-    label_h2_type = tk.Label(frame3, text="Hydrogen:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    label_h2_type.grid(row=0, column=2, sticky="e")
+    label_h2_type = tk.Label(frame3, text="Hydrogen (%):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_h2_type.grid(row=1, column=0, sticky="e")
     options_h2 = HYDROGEN
     var_h2 = StringVar()
     var_h2.set(options_h2[0])
     dropdown_h2 = OptionMenu(frame3, var_h2, *options_h2)
-    dropdown_h2.grid(row=0, column=3, sticky="w", padx=5, pady=5)
+    dropdown_h2.grid(row=1, column=1, sticky="w", padx=5, pady=5)
     dropdown_h2.config(bg="white")
 
     # Bias label and DropDown
-    label_bi_type = tk.Label(frame3, text="Bias:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    label_bi_type.grid(row=1, column=0, sticky="e")
+    label_bi_type = tk.Label(frame3, text="Bias (V):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_bi_type.grid(row=2, column=0, sticky="e")
     options_bi = BIAS
     var_bi = StringVar()
     var_bi.set(options_bi[0])
     dropdown_bi = OptionMenu(frame3, var_bi, *options_bi)
-    dropdown_bi.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+    dropdown_bi.grid(row=2, column=1, sticky="w", padx=5, pady=5)
     dropdown_bi.config(bg="white")
 
     total_dose_min_var = StringVar()
@@ -964,17 +964,17 @@ def create_tid_gui():
     # Calling update function with the default value when the dropdown is created
     update_hydrogen()  
 
-    label_total_dose_min = tk.Label(frame3, text="Total Dose Min(krad):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_total_dose_min.grid(row=2, column=0, sticky="e")
+    label_total_dose_min = tk.Label(frame3, text="Total Dose Min (krad):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_total_dose_min.grid(row=0, column=2, sticky="e")
 
     total_dose_min_combobox = ttk.Combobox(frame3, textvariable=total_dose_min_var, values=[], height=10, width=10) 
-    total_dose_min_combobox.grid(row=2, column=1, sticky="w")
+    total_dose_min_combobox.grid(row=0, column=3, sticky="w")
 
-    label_total_dose_max = tk.Label(frame3, text="Total Dose Max(krad)):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_total_dose_max.grid(row=3, column=0, sticky="e")
+    label_total_dose_max = tk.Label(frame3, text="Total Dose Max (krad)):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_total_dose_max.grid(row=1, column=2, sticky="e")
 
     total_dose_max_combobox = ttk.Combobox(frame3, textvariable=total_dose_max_var, values=[], height=10, width=10)  
-    total_dose_max_combobox.grid(row=3, column=1, sticky="w")
+    total_dose_max_combobox.grid(row=1, column=3, sticky="w")
 
     # Call the function initially to set defaults for the first selected part
     update_default_voltage()
