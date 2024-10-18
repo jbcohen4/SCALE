@@ -1413,7 +1413,7 @@ def create_tid_fluence_gui():
     dropdown_bi.config(bg="white")
 
     # Proton type
-    label_neutron_type = tk.Label(frame3, text="Neutron Type:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_neutron_type = tk.Label(frame3, text="Proton Type:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
     label_neutron_type.grid(row=0, column=2, sticky="e")
     options_proton = PROTON_TYPE
     var_proton = StringVar()
@@ -1424,25 +1424,8 @@ def create_tid_fluence_gui():
     proton_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg="gold")
     proton_type_uom.grid(row=0, column=4, sticky="e")
     
-    label_total_dose_min = tk.Label(frame3, text="Total Dose Min (krad):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    label_total_dose_min.grid(row=1, column=2, sticky="e")
-
-    total_dose_min_values = [20]
-    total_dose_min_combobox = ttk.Combobox(frame3, values=total_dose_min_values, height=10, width=10) 
-    total_dose_min_combobox.grid(row=1, column=3, sticky="w")
-    total_dose_min_combobox.set(total_dose_min_values[0])  # Set the first value as default
-
-    label_total_dose_max = tk.Label(frame3, text="Total Dose Max (krad)):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
-    label_total_dose_max.grid(row=2, column=2, sticky="e")
-
-    total_dose_max_values = [50] 
-    total_dose_max_combobox = ttk.Combobox(frame3, values=total_dose_max_values, height=10, width=10)
-    total_dose_max_combobox.grid(row=2, column=3, sticky="w")
-    total_dose_max_combobox.set(total_dose_max_values[0]) 
-
-
     label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_fluences_min.grid(row=3, column=2, sticky="e")
+    label_fluences_min.grid(row=1, column=2, sticky="e")
     # formattign the fluences
     fluence_mapping = {f"{fluence:.2E}": backend for fluence, backend in zip(FLUENCES_TF, BACKEND_FLUENCES_TF)}
     formatted_fluences = list(fluence_mapping.keys())
@@ -1450,14 +1433,14 @@ def create_tid_fluence_gui():
     fluence_min_var.set(formatted_fluences[0])
     # Create OptionMenu dropdowns for Fluence Min
     fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences[:-1], height=10, width=10)  # Limiting dropdown height to 10 items
-    fluence_min_combobox.grid(row=3, column=3, sticky="w")
+    fluence_min_combobox.grid(row=1, column=3, sticky="w")
 
     label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
-    label_fluences_max.grid(row=4, column=2, sticky="e")
+    label_fluences_max.grid(row=2, column=2, sticky="e")
     fluence_max_var = StringVar(root)
     fluence_max_var.set(formatted_fluences[-1])
     fluence_max_combobox = ttk.Combobox(frame3, textvariable=fluence_max_var, values=formatted_fluences[1:], height=10, width=10)  # Limiting dropdown height to 10 items
-    fluence_max_combobox.grid(row=4, column=3, sticky="w")
+    fluence_max_combobox.grid(row=2, column=3, sticky="w")
 
         # Function to update the max fluence value based on the min fluence value
     def update_fluence_constraints(*args):
