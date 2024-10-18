@@ -194,3 +194,38 @@ def get_tid_dataframes():
 
 def get_tid_dose_limits():
     return (TID_DOSE_MIN, TID_DOSE_MAX)
+
+# Values for TID Fluence Didiode Calculation 
+# NPN and PNP parameters as dataframes for TID & Fluence
+NPN_DF_TF = exe_tools.read_csv_to_df('csvs/TID_FLUENCE_NPN_Didiode.csv')
+PNP_DF_TF = exe_tools.read_csv_to_df('csvs/TID_FLUENCE_PNP_Didiode.csv')
+
+# Postrad Netlist paths for all the parts
+AD590_NETLIST_TEMPLATE_TF = exe_tools.read_txt_file("netlists/AD590_TF_subckt.cir")
+#npaths for LM741
+LM741_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM741_TF_subckt_Postrad.cir")
+# paths for LM111
+LM111_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM111_TF_subckt_Postrad.cir")
+# paths for LM193
+LM193_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM193_TF_subckt_Postrad.cir")
+# paths for LM139
+LM139_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM139_TF_subckt_Postrad.cir")
+
+# List to store the types of Protons
+PROTON_TYPE = ["200MeV"]
+
+
+# Values for TID_FLUENCE parameters
+DOSE_RATE_TF = [100]
+HYDROGEN_TF = [0]
+BIAS_TF = [0]
+
+# fluence values 
+FLUENCES_TF = [
+    4.04E+11, 5.34E+11,7.05E+11
+]
+
+# Backend fluences with more precision
+BACKEND_FLUENCES_TF = [
+    4.038510e+11, 5.338350e+11, 7.052400e+11
+]
