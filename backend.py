@@ -114,6 +114,9 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
+        # print(stderr)
+        # print(return_code)
+        # print(stdout)
         out_text = read_file_as_string(temp_xyce_output_filename)
         # print(out_text)
         assert len(out_text) > 0
@@ -208,6 +211,7 @@ def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: s
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     full_netlist = testbench + "\n" + subcircuit
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    print(xyce_output_pre_rad)
     all_xyce_output = get_all_xyce_output_txt(full_netlist)
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_oss, i_ibs, i_oss = [], [], [], [] # the wierd s's in v_oss and such are meant to pronounced v_os's (the plural of v_os)
@@ -423,6 +427,52 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
     
     if specification == "CMRR":
         return {'Fluence (n/cm^2)': fluences, 'CMRR_db': cmrr}
+    else:
+        assert False
+
+def generate_data_for_LM124(VCC, VEE, fluence_min, fluence_max, specification: str):
+    # print('Processing LM124')
+    subcircuit_pre_rad = LM124_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit = LM124_SUBCKT_POST_RAD_TEMPLATE
+    testbench = process_string_with_replacements(LM124_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    full_netlist = testbench + "\n" + subcircuit
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    # print(xyce_output_pre_rad)
+    all_xyce_output = get_all_xyce_output_txt(full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], [] 
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 1e11
+    for row in pre_rad_parsed_output:
+        _, Vcc, _, _, _, V_os, I_ib, I_os = row
+        if Vcc == 5: # reading the Vcc value from the xyce output at 5 instead of 15
+                fluences.append(set_fluence)
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                i_ib.append(abs(I_ib) * 10 ** 9) # amps to nA
+                i_os.append(I_os * 10 ** 9) # amps to nA
+                break
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, Vcc, _, _, _, V_os, I_ib, I_os = row
+            if Vcc == VCC:
+                fluences.append(fluence)
+                v_os.append(V_os * 10 ** 3) # volts to mV
+                i_ib.append(abs(I_ib) * 10 ** 9) # amps to nA
+                i_os.append(I_os * 10 ** 9) # amps to nA
+                break
+        else: 
+            assert False
+    if specification == "V_os":
+        return {'Fluence (n/cm^2)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'Fluence (n/cm^2)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'Fluence (n/cm^2)': fluences, 'I_os (nA)': i_os}
     else:
         assert False
 
@@ -813,6 +863,9 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
             return generate_data_for_LM741_AC_GAIN(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
         elif Selected_Specification == "CMRR":
             return generate_data_for_LM741_CMRR(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM124":
+        if Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            return generate_data_for_LM124(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM111":
         if Selected_Specification in ["I_ol", "I_oh"]:
             return generate_data_for_LM111_OUTPUT_CURRENT(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)

@@ -15,6 +15,11 @@ LM741_SLEW_RATE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_slewrate_
 LM741_AC_GAIN_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_AC_Gain_testbench.cir")
 LM741_CMRR_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_CMRR_testbench.cir")
 
+#paths for the LM124
+LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad.cir")
+LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad.cir")
+LM124_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM124_Vos_Iib_Ios_testbench.cir")
+
 # paths for LM111
 LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad.cir")
 LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Postrad.cir")
@@ -44,6 +49,7 @@ DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
     # "LM741": ["V_os", "I_ib", "I_os", "Slew_rate", "Supply_current", "Ac_gain", "CMRR"],
     "LM741": ["V_os", "I_ib", "I_os", "Supply_current", "Ac_gain", "CMRR"],
+    "LM124" : ["V_os", "I_ib", "I_os"],
     "LM193" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     # "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
@@ -63,6 +69,11 @@ DOTTER_SPECIFICATIONS = {
         "Supply_current": {"min": 0, "typical": 1.7, "max": 2.8},
         "Ac_gain": {"min": 25, "typical": 'NA', "max": 0},
         "CMRR": {"min": 80, "typical": 95, "max": 0}
+    },
+     "LM124": {
+        "V_os": {"min": 0, "typical": 'NA', "max": 7},
+        "I_ib": {"min": 0, "typical": 20, "max": 150}, #Negative in datasheet
+        "I_os": {"min": 0, "typical": 2, "max": 30},
     },
     "LM193": {
         "I_ol": {"min": 6, "typical": 'NA', "max": 0},
@@ -204,6 +215,8 @@ PNP_DF_TF = exe_tools.read_csv_to_df('csvs/TID_FLUENCE_PNP_Didiode.csv')
 AD590_NETLIST_TEMPLATE_TF = exe_tools.read_txt_file("netlists/AD590_TF_subckt.cir")
 #npaths for LM741
 LM741_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM741_TF_subckt_Postrad.cir")
+#npaths for LM124
+LM124_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM124_TF_subckt_Postrad.cir")
 # paths for LM111
 LM111_SUBCKT_POST_RAD_TEMPLATE_TF = exe_tools.read_txt_file("netlists/LM111_TF_subckt_Postrad.cir")
 # paths for LM193
