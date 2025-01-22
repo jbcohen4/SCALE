@@ -1,10 +1,12 @@
 *Subcircuit VCC VEE VIN+ VIN- VOUT
 **********************************
 .subckt LM124_sc 18 8 1 2 15
-IS1 19 8 50uA
 
 *Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
 *****************************************************************************
+
+*Current source: I<name> <+ node> <- node> [[DC] <value>]
+IS1 19 8 50uA
 
 *PNP
 D21         14 7  DMODPNP1 2.12
@@ -17,11 +19,11 @@ D16a1       18 19  DMODPNP1 0.29
 D16b1       18 19  DMODPNP1 0.29
 D171        4 2  DMODPNP1 0.95
 D181        5 4  DMODPNP1 0.95
-D19a1       18 19  DMODPNP1 0.10
-D19b1       18 19  DMODPNP1 0.10
-D19c1       18 19  DMODPNP1 0.10
-D19d1       18 19  DMODPNP1 0.10
-D19e1       18 19  DMODPNP1 0.10
+D19a1       18 19  DMODPNP1 0.20
+D19b1       18 19  DMODPNP1 0.20
+D19c1       18 19  DMODPNP1 0.20
+D19d1       18 19  DMODPNP1 0.20
+D19e1       18 19  DMODPNP1 0.20
 D201       5 3  DMODPNP1 0.99
 D211        3 1  DMODPNP1 0.95
 
@@ -35,11 +37,11 @@ D16a2       18 19  DMODPNP2 0.29
 D16b2       18 19  DMODPNP2 0.29
 D172       4 2  DMODPNP2 0.95
 D182        5 4  DMODPNP2 0.95
-D19a2       18 19  DMODPNP2 0.10
-D19b2       18 19  DMODPNP2 0.10
-D19c2       18 19  DMODPNP2 0.10
-D19d2       18 19  DMODPNP2 0.10
-D19e2       18 19  DMODPNP2 0.10
+D19a2       18 19  DMODPNP2 0.20
+D19b2       18 19  DMODPNP2 0.20
+D19c2       18 19  DMODPNP2 0.20
+D19d2       18 19  DMODPNP2 0.20
+D19e2       18 19  DMODPNP2 0.20
 D202        5 3  DMODPNP2 0.99
 D212        3 1  DMODPNP2 0.95
 
@@ -49,7 +51,7 @@ D41         7 8  DMODNPN1 0.48
 D61         10 12  DMODNPN1 0.44
 D81         13 8  DMODNPN1 0.54
 D91         12 8  DMODNPN1 3.06
-D101        13 8  DMODNPN1 0.73
+D101        13 8  DMODNPN1 1.89
 D121        16 15  DMODNPN1 1.44
 D131        17 16  DMODNPN1 13.23
 D141        9 17  DMODNPN1 1.20
@@ -59,7 +61,7 @@ D42         7 8  DMODNPN2 0.48
 D62         10 12  DMODNPN2 0.44
 D82         13 8  DMODNPN2 0.54
 D92         12 8  DMODNPN2 3.06
-D102        13 8  DMODNPN2 0.73
+D102        13 8  DMODNPN2 1.89
 D122        16 15  DMODNPN2 1.44
 D132        17 16  DMODNPN2 13.23
 D142        9 17  DMODNPN2 1.20
@@ -73,7 +75,7 @@ Q6         11 10 12 NPN_compact 0.44
 Q7         8 13 11 SPMOD 0.03
 Q8         13 13 8 NPN_compact 0.54
 Q9         9 12 8 NPN_compact 3.06
-Q10        15 13 8 NPN_compact 0.73
+Q10        15 13 8 NPN_compact 1.89
 Q11        8 9 15 SPMOD 1.04
 Q12        9 16 15 NPN_compact 1.44
 Q13        18 17 16 NPN_compact 13.23
@@ -85,11 +87,11 @@ Q16a       13 19 18 LPNP_compact 0.29
 Q16b       11 19 18 LPNP_compact 0.29
 Q17        8 2 4 SPMOD 0.04
 Q18        7 4 5 LPNP_compact 0.95
-Q19a       5 19 18 LPNP_compact 0.10
-Q19b       3 19 18 LPNP_compact 0.10
-Q19c       4 19 18 LPNP_compact 0.10
-Q19d       14 19 18 LPNP_compact 0.10
-Q19e       10 19 18 LPNP_compact 0.10
+Q19a       5 19 18 LPNP_compact 0.20
+Q19b       3 19 18 LPNP_compact 0.20
+Q19c       4 19 18 LPNP_compact 0.20
+Q19d       14 19 18 LPNP_compact 0.20
+Q19e       10 19 18 LPNP_compact 0.20
 Q20        6 3 5 LPNP_compact 0.99
 Q21        8 1 3 SPMOD 0.04
 

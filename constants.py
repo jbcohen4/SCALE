@@ -3,7 +3,8 @@ import pandas as pd
 
 XYCE_EXE_PATH = exe_tools.adjust_path("xyce/Xyce.exe")
 # paths for the AD590
-AD590_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_template.cir")
+AD590_PRE_RAD_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_template_Prerad.cir")
+AD590_POST_RAD_NETLIST_TEMPLATE = exe_tools.read_txt_file("netlists/AD590_template_Postrad.cir")
 
 #paths for the LM741
 LM741_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM741_subckt_Postrad.cir")
@@ -133,23 +134,24 @@ BACKEND_FLUENCES = [
 
 # Values for TID parameters
 DOSE_RATE = [0.01,0.1,100]
-HYDROGEN = [0.1,100]
+HYDROGEN = [0,0.1,100]
 BIAS = [0]
 
 # valid combination between the TID parameters
 VALID_TID_COMBINATIONS = {
     0.01: [0.1],
     0.1: [100],
-    100: [100]
+    100: [0,100]
 }
 # List to store the radtion doses for TID
-TID_DOSES = ["DR=0.01_H2=0.1_B=0", "DR=0.1_H2=100_B=0", "DR=100_H2=100_B=0"]
+TID_DOSES = ["DR=0.01_H2=0.1_B=0", "DR=0.1_H2=100_B=0", "DR=100_H2=100_B=0", "DR=100_H2=0_B=0"]
 
 # TID MAPPING 
 TID_MAPPING = {
     "DR=0.01_H2=0.1_B=0": ["csvs/TID_NPN_SHEET1_V0.csv","csvs/TID_PNP_SHEET1_V0.csv"],
     "DR=0.1_H2=100_B=0": ["csvs/TID_NPN_SHEET2_V0.csv","csvs/TID_PNP_SHEET2_V0.csv"],
-    "DR=100_H2=100_B=0": ["csvs/TID_NPN_SHEET3_V0.csv","csvs/TID_PNP_SHEET3_V0.csv"]
+    "DR=100_H2=100_B=0": ["csvs/TID_NPN_SHEET3_V0.csv","csvs/TID_PNP_SHEET3_V0.csv"],
+    "DR=100_H2=0_B=0": ["csvs/TID_NPN_SHEET4_V0.csv","csvs/TID_PNP_SHEET4_V0.csv"]
 }
 
 # NPN & PNP selection based on TID input

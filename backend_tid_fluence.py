@@ -194,8 +194,22 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
 
 
 def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
-    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(AD590_NETLIST_TEMPLATE_TF) if fluences_min <= fluence <= fluences_max]
+    pre_rad_full_netlist = AD590_PRE_RAD_NETLIST_TEMPLATE
+    full_netlist = AD590_NETLIST_TEMPLATE_TF
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
     xs, ys = [], []
+    set_fluence = 0
+    for row in pre_rad_parsed_output:
+        _, Vcc, I_out = row
+        if Vcc == voltage:
+            xs.append(set_fluence)
+            ys.append(I_out * 10 ** 6)
+            break
+    
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(full_netlist) if fluences_min <= fluence <= fluences_max]
+
     print('Xyce_ouptut:',xyce_output)
     for fluence, out_txt in xyce_output:
         parsed_output = parse_output_data_dynamic(out_txt)

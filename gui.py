@@ -658,7 +658,8 @@ def create_tid_gui():
             root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
         except Exception as e:
             print(f"An error occurred: {e}")
-            print(data)
+            if data:
+                print(data)
             stop_progress_bar()
             setup_graph()
             log_message(f"An error occurred: {e}")
@@ -956,7 +957,10 @@ def create_tid_gui():
         for value in hydrogen_values:
             menu.add_command(label=value, command=lambda v = value: var_h2.set(v))
         var_h2.set(hydrogen_values[0])
-        
+        call_update_tid()
+    
+    # Calling update_tid_dataframes Function on hydrogen dropdown change
+    def call_update_tid(*args):
         # Calling update function with the default value when the dropdown is created
         combined_key = form_argument_key() 
         update_tid_dataframes(combined_key)
@@ -966,9 +970,10 @@ def create_tid_gui():
         total_dose_min, total_dose_max = TID_VALUES
         total_dose_min_var.set(total_dose_min)
         total_dose_max_var.set(total_dose_max)
-    
+
     # Function to update the TID dataframes based on the selected dose rate
     var_dr.trace_add('write', update_hydrogen)
+    var_h2.trace_add('write', call_update_tid)
 
     # Calling update function with the default value when the dropdown is created
     update_hydrogen()  

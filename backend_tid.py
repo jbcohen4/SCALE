@@ -126,7 +126,7 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
 
 
 # @lru_cache - same set of combination will have diff values of TID/H2 so can not cache results. 
-# # all subcircuits + testbenches + specifications should use this. It's super general and works great.
+# all subcircuits + testbenches + specifications should use this. It's super general and works great.
 # We'll have to modify it a little bit to deal with AC gain. That's cool. We will do that.
 def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = None) -> List[Tuple[float, str]]:
     """Returns an array of (float, str) tuples. The float represents the fluences of the run, the string is the data that xyce gave us back."""
@@ -153,7 +153,8 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
             
             # For Debugging - in case netlist need to be printed and checked
-            # write_output_to_multiple_file("NETLIST_741_SLEW_RATE", filled_in_netlist_str, row_index)
+            # write_output_to_multiple_file("NETLIST_LM139", filled_in_netlist_str, row_index)
+            # print(filled_in_netlist_str)
 
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
@@ -184,13 +185,29 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
                 for row_index, ((_, row_npn), (_, row_pnp)) in enumerate(zip(NPN_DF_TID.iterrows(), PNP_DF_TID.iterrows()), start=1)
             ]
         # Execute the tasks
+        # print(all_task_args)
         results = list(ex.map(lambda args: process_row(*args), all_task_args))
+        # print(results)
         return results
 
 
 def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
-    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(AD590_NETLIST_TEMPLATE) if fluences_min <= fluence <= fluences_max]
+    pre_rad_full_netlist = AD590_PRE_RAD_NETLIST_TEMPLATE
+    full_netlist = AD590_POST_RAD_NETLIST_TEMPLATE
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
     xs, ys = [], []
+    set_fluence = 0
+    for row in pre_rad_parsed_output:
+        _, Vcc, I_out = row
+        if Vcc == voltage:
+            xs.append(set_fluence)
+            ys.append(I_out * 10 ** 6)
+            break
+    
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in get_all_xyce_output_txt(full_netlist) if fluences_min <= fluence <= fluences_max]
+
     for fluence, out_txt in xyce_output:
         parsed_output = parse_output_data_dynamic(out_txt)
         for row in parse_output_data_dynamic(out_txt):
@@ -431,7 +448,7 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
         assert False
 
 def generate_data_for_LM124(VCC, VEE, fluence_min, fluence_max, specification: str):
-    print('Processing LM124')
+    # print('Processing LM124')
     subcircuit_pre_rad = LM124_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM124_SUBCKT_POST_RAD_TEMPLATE
     testbench = process_string_with_replacements(LM124_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
@@ -797,6 +814,7 @@ def generate_data_for_LM139_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, s
         assert False 
 
 def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specification: str):
+    print("PROCESSING LM139_VOS")
     subcircuit_pre_rad = LM139_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = LM139_SUBCKT_POST_RAD_TEMPLATE
 
@@ -805,7 +823,10 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
 
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    print(xyce_output_pre_rad)
+
     all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    print('got post rad results')
 
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_os, i_ib, i_os = [], [], [], []
