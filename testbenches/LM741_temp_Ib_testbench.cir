@@ -1,0 +1,93 @@
+*LM741_VOS_AD (PSpice format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+*.INC "C:\Program Files (x86)\DesignSoft\Tina 9 - TI\EXAMPLES\SPICE\TSPICE.LIB"
+*.LIB "C:\Program Files (x86)\DesignSoft\Tina 9 - TI\SPICELIB\Operational Amplifiers.LIB"
+*.LIB
+*.TEMP 27
+
+
+*.OPTIONS ABSTOL=1P ITL1=150 ITL2=20 ITL4=10 TRTOL=7 
+
+VS4         3 0 {Vee}V
+VS3         4 0 {Vcc}V
+VS2         7 0 {Vee}V
+VS1         8 0 {Vcc}V
+C1          1 2 5U 
+XOP1         0 1 4 3 2 StdOpamp
++ PARAMS: GAIN=200K RIN=2MEG ROUT=75 SLEWRATE=5MEG FPOLE1=5 FPOLE2=10MEG VOFFS=0 IBIAS=0 IOFFS=0 VDROPOH=1 VDROPOL=1
+R3          55 2 99.9K 
+R2          0 55 100 
+R1          0 66 100
+R6          55 5 100K 
+R7          66 6 0 
+R5          9 1 220K 
+R4          9 1 220K 
+XU1         8 7 5 6 9 LM741
+
+*Input
+******
+.DC LIN VS1 15 15 0
+
+*Output
+*******
+.print dc format=noindex file={output_filename}
++ V(2)
++ V(5)
++ V(6)
++ I(R1)
++ I(R2)
++ I(R3)
+
+
+
+* STANDARD OPERATIONAL AMPLIFIER MACROMODEL SUBCIRCUIT
+* CREATED USING 08/05/06
+* (REV 1.3 26/02/08 )
+.SUBCKT STDOPAMP  INP INM VP VM OUT
++ PARAMS: GAIN=200K RIN=2MEG RINC=1E9 ROUT=75 SLEWRATE=500K FPOLE1=5 FPOLE2=1MEG 
++         VDROPOH=1.9 VDROPOL=1.9 VOFFS=1M IBIAS=80N IOFFS=20N 
+*
+.PARAM PI = 3.141592
+.PARAM IS = 1.0E-12
+.PARAM VTHR = 0.02585
+.PARAM IMAX = 100.0E-2
+.PARAM C1 = {IMAX/SLEWRATE}
+.PARAM R1 = {1/(2*PI*C1*FPOLE1)}
+.PARAM GM1 = {GAIN/R1}
+.PARAM R2 = 100
+.PARAM G2 = {1/R2}
+.PARAM GOUT = {1/ROUT}
+.PARAM C2 = {1/(2*PI*R2*FPOLE2)}
+.PARAM VDF = {VTHR*LOG(1 + IMAX/IS)}
+*
+IBIASM      INM 0  {IBIAS - IOFFS}
+RINM      INM  8  {2*RINC}
+RINP      INP  8  {2*RINC}
+IBIAS       10 0   {IBIAS}
+VOFFS       10 INP  {VOFFS}
+EVP VPI 0 VP 0 1
+EVM VMI 0 VM 0 1
+VC          VPI 11  {VDROPOH + VDF}
+VE          12 VMI  {VDROPOL + VDF}
+D1          VM VP  D_1
+RP          VP VM  15E3
+ROUT        OUT 8  {ROUT}
+GMO         8 OUT 9 8 {GOUT}
+C2          9 8  {C2}
+R2          9 8  {R2}
+GM2         8 9 7 8 {G2}
+RIN         INM 10  {RIN}
+ *Bpoly 1 2 V={POLY(3) I(V1) V(2,3) V(3)}
+BGND        8  0  V={POLY(2) V(VP,0) V(VM,0) 0 .5 .5}
+D3         12 7  D_1
+D2          7 11  D_1
+C1          7 8  {C1}
+R1          7 8  {R1}
+GM1         8 7 VALUE = { LIMIT( GM1*V(10,INM), -IMAX, IMAX) }
+.MODEL D_1 D( IS={IS} )
+.ENDS

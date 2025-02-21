@@ -1,6 +1,6 @@
 import tkinter as tk
 import threading
-import subprocess
+import subprocess, traceback  
 
 from tkinter import LabelFrame, StringVar, OptionMenu, ttk
 from PIL import Image, ImageTk
@@ -127,25 +127,19 @@ def create_fluence_gui():
         frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
         return frame
 
-    # Validation function to allow only numerical values
-    def validate_numerical(value):
-        if value == '' or value == "-":
-            return True
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
-
     # Function to log messages directly to the Text widget
     def log_message(message):
-        """Append a message to the message widget."""
-        if message_widget: 
-            message_widget.insert(tk.END, message + "\n")
-            message_widget.see(tk.END)  
-        else:
-            print("Message widget is not initialized.")
+        # Append a message to the message widget.
+        try:
+            if message_widget:
+                message_widget.insert(tk.END, message + "\n")
+                message_widget.see(tk.END)
+            else:
+                raise NameError("Message widget is not defined.")
+        except NameError:
+            print("Message widget not found. Logging to console:")
+            print(message)
+
 
     # Function to create the message frame within the graph frame
     def setup_graph():
@@ -181,22 +175,22 @@ def create_fluence_gui():
 
     # Function to get data from backend in a separate thread
     def generate_data_thread():
-        # show the progress bar
-        progress_bar.grid()  
-        progress_bar.start(10)  
+        # Show the progress bar
+        progress_bar.grid()
+        progress_bar.start(10)
         progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="e")
 
         try:
-            # get data from user inputs
+            # Get data from user inputs
             Selected_Part = var1.get()
             Selected_Specification = var2.get()
             VCC = spinbox_vcc.get()
             VEE = spinbox_vee.get()
-            Temperature = spinbox_temp.get() # at the moment, the backend can't use this
+            Temperature = spinbox_temp.get()
             Fluence_Min = fluence_mapping[fluence_min_var.get()]
             Fluence_Max = fluence_mapping[fluence_max_var.get()]
-            
-            # validate data and put in default values as needed
+
+            # Validate inputs and assign defaults
             if Selected_Part in ("AD590", "LM193", "LM139"):
                 VCC = 5.0 if VCC == "" else float(VCC)
                 VEE = None if VEE == "NA" else float(VEE)
@@ -206,17 +200,44 @@ def create_fluence_gui():
             Fluence_Min = -INFINITY if Fluence_Min == "" else float(Fluence_Min)
             Fluence_Max = +INFINITY if Fluence_Max == "" else float(Fluence_Max)
 
+            # Call backend to generate data
             data = backend.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
+            # Plot the data
             root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
+
         except Exception as e:
-            print(f"An error occurred: {e}")
-            log_message(f"An error occurred: {e}")
-            root.after(0,stop_progress_bar)
+            # Log the full error details to the console
+            print("An error occurred:")
+            traceback.print_exc()
+
+            # Show a generic error message in the graph area
+            root.after(0, display_error_message, "An error occurred while generating data.")
+        finally:
+            # Stop the progress bar
+            root.after(0, stop_progress_bar)
+        
+
+    def display_error_message(error_message):
+        #Clear the graph area and display a generic error message.
+        for widget in fluence_frame.winfo_children():
+            if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                for child in widget.winfo_children():
+                    child.destroy()
+                widget.destroy()
+
+        # Create a new frame to show the error message
+        graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
+        error_label = tk.Label(graph_frame, text=error_message, fg="red", font=("Arial", 14), bg="white", wraplength=400)
+        error_label.pack(expand=True, fill="both")
+
 
     # Function to draw the graph with new data
     def draw_graph(data, Selected_Part, Selected_Specification):
         global plot_data,fig, ax, canvas, current_y_scale
         
+        # Create new graph frame
+        graph_frame = setup_graph()
+
         if not data or all(not v for v in data.values()):
             print("No data available to plot.")
             return 
@@ -227,9 +248,6 @@ def create_fluence_gui():
         (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
         xs = np.array(x_axis_data)
         ys = np.array(y_axis_data)
-        
-        # Create new graph frame
-        graph_frame = setup_graph()
         
         # Log plot data to the message box
         log_message("Plot Data:")
@@ -309,9 +327,13 @@ def create_fluence_gui():
         spinbox_temp.delete(0, tk.END) 
         print("Clear all the fields")
 
-        # Find and destroy the existing graph frame
-        for widget in root.winfo_children():
+        # Find and destroy the existing graph frame and its children
+        for widget in fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                # Destroy all children of the graph frame
+                for child in widget.winfo_children():
+                    child.destroy()
+                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -585,15 +607,17 @@ def create_tid_gui():
         except ValueError:
             return False
 
-
-    # Function to log messages directly to the Text widget
     def log_message(message):
         """Append a message to the message widget."""
-        if message_widget: 
-            message_widget.insert(tk.END, message + "\n")
-            message_widget.see(tk.END)  
-        else:
-            print("Message widget is not initialized.")
+        try:
+            if message_widget:
+                message_widget.insert(tk.END, message + "\n")
+                message_widget.see(tk.END)
+            else:
+                raise NameError("Message widget is not defined.")
+        except NameError:
+            print("Message widget not found. Logging to console:")
+            print(message)
 
     # Function to create the message frame within the graph frame
     def setup_graph():
@@ -657,18 +681,37 @@ def create_tid_gui():
             data = backend_tid.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, tid_min, tid_max)
             root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
         except Exception as e:
-            print(f"An error occurred: {e}")
-            if data:
-                print(data)
-            stop_progress_bar()
-            setup_graph()
-            log_message(f"An error occurred: {e}")
-            root.after(0,stop_progress_bar)
+            # Log the full error details to the console
+            print("An error occurred:")
+            traceback.print_exc()
+
+            # Show a generic error message in the graph area
+            root.after(0, display_error_message, "An error occurred while generating data.")
+        finally:
+            # Stop the progress bar
+            root.after(0, stop_progress_bar)
+        
+
+    def display_error_message(error_message):
+        #Clear the graph area and display a generic error message.
+        for widget in fluence_frame.winfo_children():
+            if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                for child in widget.winfo_children():
+                    child.destroy()
+                widget.destroy()
+
+        # Create a new frame to show the error message
+        graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
+        error_label = tk.Label(graph_frame, text=error_message, fg="red", font=("Arial", 14), bg="white", wraplength=400)
+        error_label.pack(expand=True, fill="both")
 
     # Function to draw the graph with new data
     def draw_graph(data, Selected_Part, Selected_Specification):
         global plot_data,fig, ax, canvas, current_y_scale
         
+        # Create new graph frame
+        graph_frame = setup_graph()
+
         if not data or all(not v for v in data.values()):
             print("No data available to plot.")
             return 
@@ -679,9 +722,7 @@ def create_tid_gui():
         (x_axis_name, x_axis_data), (y_axis_name, y_axis_data) = data.items()
         xs = np.array(x_axis_data)
         ys = np.array(y_axis_data)
-        
-        # Create new graph frame
-        graph_frame = setup_graph()
+    
         
         # Log plot data to the message box
         log_message("Plot Data:")
@@ -761,9 +802,25 @@ def create_tid_gui():
         spinbox_temp.delete(0, tk.END) 
         print("Clear all the fields")
 
-        # Find and destroy the existing graph frame
-        for widget in tid_frame.winfo_children():
+    # Clear function 
+    def clear_function():
+        # Clear spinbox entries
+        spinbox_vcc.delete(0, tk.END)
+        spinbox_vcc.insert(0, 5) 
+
+        spinbox_vee.delete(0, tk.END)
+        spinbox_vee.insert(0, 'NA')  
+
+        spinbox_temp.delete(0, tk.END) 
+        print("Clear all the fields")
+
+        # Find and destroy the existing graph frame and its children
+        for widget in fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                # Destroy all children of the graph frame
+                for child in widget.winfo_children():
+                    child.destroy()
+                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -1056,25 +1113,18 @@ def create_tid_fluence_gui():
         frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
         return frame
 
-    # Validation function to allow only numerical values, not used as of now 
-    def validate_numerical(value):
-        if value == '' or value == "-":
-            return True
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
 
-
-    # Function to log messages directly to the Text widget
     def log_message(message):
         """Append a message to the message widget."""
-        if message_widget: 
-            message_widget.insert(tk.END, message + "\n")
-            message_widget.see(tk.END)  
-        else:
-            print("Message widget is not initialized.")
+        try:
+            if message_widget:
+                message_widget.insert(tk.END, message + "\n")
+                message_widget.see(tk.END)
+            else:
+                raise NameError("Message widget is not defined.")
+        except NameError:
+            print("Message widget not found. Logging to console:")
+            print(message)
 
     # Function to create the message frame within the graph frame
     def setup_graph():
@@ -1138,12 +1188,29 @@ def create_tid_fluence_gui():
             data = backend_tid_fluence.generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Fluence_Min, Fluence_Max)
             root.after(0, draw_graph, data, Selected_Part, Selected_Specification)
         except Exception as e:
-            print(f"An error occurred: {e}")
-            print(data)
-            stop_progress_bar()
-            setup_graph()
-            log_message(f"An error occurred: {e}")
-            root.after(0,stop_progress_bar)
+            # Log the full error details to the console
+            print("An error occurred:")
+            traceback.print_exc()
+
+            # Show a generic error message in the graph area
+            root.after(0, display_error_message, "An error occurred while generating data.")
+        finally:
+            # Stop the progress bar
+            root.after(0, stop_progress_bar)
+        
+
+    def display_error_message(error_message):
+        #Clear the graph area and display a generic error message.
+        for widget in fluence_frame.winfo_children():
+            if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                for child in widget.winfo_children():
+                    child.destroy()
+                widget.destroy()
+
+        # Create a new frame to show the error message
+        graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
+        error_label = tk.Label(graph_frame, text=error_message, fg="red", font=("Arial", 14), bg="white", wraplength=400)
+        error_label.pack(expand=True, fill="both")
 
     # Function to draw the graph with new data
     def draw_graph(data, Selected_Part, Selected_Specification):
@@ -1241,9 +1308,13 @@ def create_tid_fluence_gui():
         spinbox_temp.delete(0, tk.END) 
         print("Clear all the fields")
 
-        # Find and destroy the existing graph frame
-        for widget in tid_fluence_frame.winfo_children():
+    # Find and destroy the existing graph frame and its children
+        for widget in fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
+                # Destroy all children of the graph frame
+                for child in widget.winfo_children():
+                    child.destroy()
+                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -1510,7 +1581,6 @@ def create_tid_fluence_gui():
 
     clear_button = tk.Button(frame4, text="Clear input", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
     clear_button.grid(row=3, column=1, padx=10, pady=5)
-
 
 # Create the Fluence GUI
 create_fluence_gui()

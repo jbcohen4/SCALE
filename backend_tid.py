@@ -223,6 +223,107 @@ def generate_data_for_AD590(voltage, fluences_min=-inf, fluences_max=inf):
         'I_out (µA)': ys
     }
 
+def generate_data_for_LM741_Temp_Test(VCC, VEE, fluence_min, fluence_max, specification: str):
+    print('Processing LM741 Temp Test')
+    subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit = LM741_SUBCKT_POST_RAD_TEMPLATE
+    testbench = process_string_with_replacements(LM741_TEMP_VOS_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    print(f"pre_rad_full_netlist_VOS: {pre_rad_full_netlist}")
+
+    full_netlist = testbench + "\n" + subcircuit
+
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(full_netlist)
+    
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, i_ib, i_os = [], [], [], []
+
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 0
+    for row in pre_rad_parsed_output:
+        _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+        fluences.append(set_fluence)
+        val = (abs(v_2) / 10**3 ) * 10**3
+        v_os.append(val)
+    
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+            fluences.append(fluence)
+            val = (abs(v_2) / 10**3 ) * 10**3
+            v_os.append(val)
+    
+    ib_testbench = process_string_with_replacements(LM741_TEMP_IB_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
+    ib_pre_rad_full_netlist = ib_testbench + "\n" + subcircuit_pre_rad
+    ib_full_netlist = ib_testbench + "\n" + subcircuit
+    ib_xyce_output_pre_rad = get_pre_rad_xyce_output_txt(ib_pre_rad_full_netlist)
+    print(f"pre_rad_full_netlist_Ib: {ib_xyce_output_pre_rad}")
+    ib_all_xyce_output = get_all_xyce_output_txt(ib_full_netlist)
+
+    ib_xyce_output = [(fluence, out_txt) for (fluence, out_txt) in ib_all_xyce_output if fluence_min <= fluence <= fluence_max]
+
+    #process for prerad
+    index = 0
+    ib_pre_rad_parsed_output = parse_output_data_dynamic(ib_xyce_output_pre_rad)
+    for row in ib_pre_rad_parsed_output:
+        _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+        val = (abs(v_2+v_os[index]) / 10 ** 8) * 10 ** 9
+        i_ib.append(val)
+        index += 1
+    
+    # process for post_rad
+    for fluence, out_text in ib_xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+            val = (abs(v_2+v_os[index]) / 10 ** 8) * 10 ** 9
+            i_ib.append(val)
+            index += 1        
+
+    ios_testbench = process_string_with_replacements(LM741_TEMP_IOS_TESTBENCH, {"Vcc": VCC, "Vee": VEE})
+    ios_pre_rad_full_netlist = ios_testbench + "\n" + subcircuit_pre_rad
+    ios_full_netlist = ios_testbench + "\n" + subcircuit
+    ios_xyce_output_pre_rad = get_pre_rad_xyce_output_txt(ios_pre_rad_full_netlist)
+    print(f"pre_rad_full_netlist_Ios: {ios_xyce_output_pre_rad}")
+    ios_all_xyce_output = get_all_xyce_output_txt(ios_full_netlist)
+
+    ios_xyce_output = [(fluence, out_txt) for (fluence, out_txt) in ios_all_xyce_output if fluence_min <= fluence <= fluence_max]
+
+    #process for prerad
+    index = 0
+    ios_pre_rad_parsed_output = parse_output_data_dynamic(ios_xyce_output_pre_rad)
+    for row in ios_pre_rad_parsed_output:
+        _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+        val = (abs(v_2+v_os[index])/ 10 ** 8) * 10 ** 9
+        i_os.append(val)
+        index += 1
+    
+    # process for post_rad
+    for fluence, out_text in ios_xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, v_2, v_5, v_6, i_r1, i_r2, i_r3 = row
+            val = (abs(v_2+v_os[index])/ 10 ** 8) * 10 ** 9
+            i_os.append(val)
+            index += 1
+
+    if specification == "V_os":
+        return {'TID(krad)': fluences, 'V_os (mV)': v_os}
+    elif specification == "I_ib":
+        return {'TID(krad)': fluences, 'I_ib (nA)': i_ib}
+    elif specification == "I_os":
+        return {'TID(krad)': fluences, 'I_os (nA)': i_os}
+    else:
+        assert False
+
 def generate_data_for_LM741(VCC, VEE, fluence_min, fluence_max, specification: str):
     subcircuit_pre_rad = LM741_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM741_SUBCKT_POST_RAD_TEMPLATE
@@ -648,6 +749,7 @@ def generate_data_for_LM193_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, s
         assert False 
 
 def generate_data_for_LM193_VOS(VCC, VEE, fluence_min, fluence_max, specification: str):
+    # this method is not being used currently - uncomment it if its made active
     subcircuit_pre_rad = LM193_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = LM193_SUBCKT_POST_RAD_TEMPLATE
 
@@ -823,10 +925,8 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
 
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
-    print(xyce_output_pre_rad)
 
     all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
-    print('got post rad results')
 
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_os, i_ib, i_os = [], [], [], []
@@ -852,7 +952,6 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         #     with open("output/post_rad_LM139.txt", 'w') as file:
         #         file.write(out_text)
         #     store = True
-        # print(out_text)
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
@@ -877,6 +976,52 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         return {'TID(krad)': fluences, 'I_ib (nA)': i_ib}
     else:
         assert False 
+
+def generate_data_for_LM117(VCC, VEE, fluence_min, fluence_max, specification: str):
+    subcircuit_pre_rad = LM117_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = LM117_SUBCKT_POST_RAD_TEMPLATE
+
+    testbench = LM117_VREF_TESTBENCH_TEMPLATE
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_ref ,i_adj, v_out  = [], [], [], []
+
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)    
+    set_fluence = 0
+    for index, row in enumerate(pre_rad_parsed_output):
+        _, v_2, v_3, diff_v2v3, i_r2, i_r1 , diff_ir2ir1= row 
+        if index == 0:
+            fluences.append(set_fluence)
+            v_ref.append(diff_v2v3) # volts to v
+            i_adj.append(diff_ir2ir1 * 10 ** 6) # amps to μA
+            v_out.append(v_2)
+            break
+
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for index, row in enumerate(parsed_output):
+            _, v_2, v_3, diff_v2v3, i_r2, i_r1 , diff_ir2ir1= row 
+            if index == 0:
+                fluences.append(fluence)
+                v_ref.append(diff_v2v3) # volts to V
+                i_adj.append(diff_ir2ir1 * 10 ** 6) # amps to μA
+                v_out.append(v_2)
+                break
+    
+    if specification == "V_ref":
+        return {'TID(krad)': fluences, 'Reference voltage (V)': v_ref}
+    elif specification == "I_adj":
+        return {'TID(krad)': fluences, 'Adj. pin current (μA)': i_adj}
+    elif specification == "V_out":
+        return {'TID(krad)': fluences, 'Output voltage (V)': v_out}
 
 
 # Function to return the data to GUI 
@@ -910,6 +1055,12 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
             return generate_data_for_LM139_OUTPUT_CURRENT(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
         elif Selected_Specification in ["V_os", "I_ib", "I_os"]:
              return generate_data_for_LM139_VOS(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM117":
+        if Selected_Specification in ["V_ref", "I_adj", "V_out"]:
+            return generate_data_for_LM117(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
+    elif Selected_Part == "LM741_Test":
+        if Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            return generate_data_for_LM741_Temp_Test(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
     else:
         assert False
     pass

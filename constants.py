@@ -16,6 +16,11 @@ LM741_SLEW_RATE_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_slewrate_
 LM741_AC_GAIN_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_AC_Gain_testbench.cir")
 LM741_CMRR_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_CMRR_testbench.cir")
 
+# LM741 temp test bench
+LM741_TEMP_VOS_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Vos_testbench.cir")
+LM741_TEMP_IB_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ib_testbench.cir")
+LM741_TEMP_IOS_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ios_testbench.cir")
+
 #paths for the LM124
 LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad.cir")
 LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad.cir")
@@ -41,6 +46,11 @@ LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_
 LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_OutputCurrents_testbench_V0.cir")
 LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V1.cir")
 
+# paths for LM117
+LM117_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Prerad.cir")
+LM117_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Postrad.cir")
+LM117_VREF_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM117_Vref_Iadj_testbench.cir")
+
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
 PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
@@ -54,7 +64,9 @@ DROPDOWN_MAPPING = {
     "LM193" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     # "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
-    "LM111" : ["V_os", "I_ib", "I_os"]
+    "LM111" : ["V_os", "I_ib", "I_os"],
+    "LM117" : ["V_ref", "I_adj", "V_out"],
+    "LM741_Test": ["V_os", "I_ib", "I_os"]
 }
 
 # object to store values of the specifications for dotter plot
@@ -96,6 +108,16 @@ DOTTER_SPECIFICATIONS = {
         "V_os": {"min": 0, "typical": 0.7, "max": 4},
         "I_ib": {"min": 0, "typical": 60, "max": 150},
         "I_os": {"min": 0, "typical": 4.0, "max": 20}
+    },
+    "LM117": {
+        "V_ref": {"min": 0, "typical": 0, "max": 1.3},
+        "I_adj": {"min": 0, "typical": 0, "max": 100},
+        "V_out": {"min": 0, "typical": 0, "max": 0}
+    },
+    "LM741_Test": {
+        "V_os": {"min": 0, "typical": 'NA', "max": 6},
+        "I_ib": {"min": 0, "typical": 80, "max": 500},
+        "I_os": {"min": 0, "typical": 20, "max": 200},
     }
 }
 
