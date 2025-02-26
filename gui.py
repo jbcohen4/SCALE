@@ -74,7 +74,7 @@ fluence_button.pack(side="left", padx=20, pady=5)
 tid_button = tk.Button(button_frame, text="TID", command=lambda: show_frame(tid_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
 tid_button.pack(side="left", padx=20, pady=5)
 
-tid_fluence_button = tk.Button(button_frame, text="TID_Fluence", command=lambda: show_frame(tid_fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
+tid_fluence_button = tk.Button(button_frame, text="ION_Fluence", command=lambda: show_frame(tid_fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
 tid_fluence_button.pack(side="left", padx=20, pady=5)
 
 # Function to switch between frames using grid
@@ -1090,7 +1090,7 @@ def create_tid_gui():
     clear_button.grid(row=3, column=1, padx=10, pady=5)
 
 # TID_Fluence Frame
-def create_tid_fluence_gui():
+def create_ion_fluence_gui():
     global fig, ax, canvas, current_y_scale, message_widget, plot_data
     current_y_scale = 'linear'
     plot_data = pd.DataFrame()
@@ -1456,7 +1456,7 @@ def create_tid_fluence_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame3 = create_frame(2, 4, "ION testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
 
     # Dose Rate Label and DropDown
     label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
@@ -1589,7 +1589,7 @@ create_fluence_gui()
 create_tid_gui()
 
 # create the TID_Fluence GUI
-create_tid_fluence_gui()
+create_ion_fluence_gui()
 
 # Display Fluence Frame initially
 show_frame(fluence_frame)

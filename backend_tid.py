@@ -1023,6 +1023,47 @@ def generate_data_for_LM117(VCC, VEE, fluence_min, fluence_max, specification: s
     elif specification == "V_out":
         return {'TID(krad)': fluences, 'Output voltage (V)': v_out}
 
+def generate_data_for_OP27(VCC, VEE, fluence_min, fluence_max, specification: str):
+    print("Processing OP27")
+    subcircuit_pre_rad = OP27_SUBCKT_PRE_RAD_TEMPLATE
+    subcircuit_post_rad = OP27_SUBCKT_POST_RAD_TEMPLATE
+
+    testbench = process_string_with_replacements(OP27_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
+    pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
+    post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
+    fluences, v_os, ib, i_os = [], [], [], []
+    # process for pre_rad
+    pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
+    set_fluence = 0
+    for row in pre_rad_parsed_output:
+        _, V_cc, V_out, V_os, Ib, I_os = row
+        if V_cc == 15:
+            fluences.append(set_fluence)
+            v_os.append(V_os * 10 ** 6) # volts to μV
+            ib.append(Ib * 10 ** 9)     # amps to nA
+            i_os.append(I_os * 10 ** 9) # amps to nA
+            break
+    # process for post_rad
+    for fluence, out_text in xyce_output:
+        assert fluence_min <= fluence <= fluence_max
+        parsed_output = parse_output_data_dynamic(out_text)
+        for row in parsed_output:
+            _, V_cc, V_out, V_os, Ib, I_os = row
+            if V_cc == 15:
+                fluences.append(fluence)
+                v_os.append(V_os * 10 ** 6) # volts to μV
+                ib.append(Ib * 10 ** 9)     # amps to nA
+                i_os.append(I_os * 10 ** 9) # amps to nA
+                break
+    if specification == "V_os":
+        return {'TID(krad)': fluences, 'V_os (μV)': v_os}
+    elif specification == "I_ib":
+        return {'TID(krad)': fluences, 'I_ib (nA)': ib}
+    elif specification == "I_os":
+        return {'TID(krad)': fluences, 'I_os (nA)': i_os}
 
 # Function to return the data to GUI 
 def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, Tid_Min, Tid_Max):
@@ -1061,6 +1102,9 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
     elif Selected_Part == "LM741_Test":
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:
             return generate_data_for_LM741_Temp_Test(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
+    elif Selected_Part == "OP27":
+        if Selected_Specification in ["V_os", "I_ib", "I_os"]:
+            return generate_data_for_OP27(VCC=VCC, VEE=VEE, fluence_min=Tid_Min, fluence_max=Tid_Max, specification=Selected_Specification)
     else:
         assert False
     pass

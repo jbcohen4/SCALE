@@ -51,6 +51,11 @@ LM117_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_P
 LM117_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Postrad.cir")
 LM117_VREF_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM117_Vref_Iadj_testbench.cir")
 
+# Paths for OP27
+OP27_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Prerad.cir")
+OP27_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Postrad.cir")
+OP27_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/OP27_Vos_Iib_Ios_testbench.cir")
+
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
 PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
@@ -66,7 +71,8 @@ DROPDOWN_MAPPING = {
     # "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
     "LM111" : ["V_os", "I_ib", "I_os"],
     "LM117" : ["V_ref", "I_adj", "V_out"],
-    "LM741_Test": ["V_os", "I_ib", "I_os"]
+    "LM741_Test": ["V_os", "I_ib", "I_os"],
+    "OP27" : ["V_os", "I_ib", "I_os"]
 }
 
 # object to store values of the specifications for dotter plot
@@ -118,6 +124,11 @@ DOTTER_SPECIFICATIONS = {
         "V_os": {"min": 0, "typical": 'NA', "max": 6},
         "I_ib": {"min": 0, "typical": 80, "max": 500},
         "I_os": {"min": 0, "typical": 20, "max": 200},
+    },
+    "OP27": {
+        "V_os": {"min": 0, "typical": 0, "max": 0},
+        "I_ib": {"min": 0, "typical": 0, "max": 0},
+        "I_os": {"min": 0, "typical": 0, "max": 0}
     }
 }
 
