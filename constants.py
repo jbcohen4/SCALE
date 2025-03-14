@@ -52,9 +52,10 @@ LM117_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_
 LM117_VREF_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM117_Vref_Iadj_testbench.cir")
 
 # Paths for OP27
-OP27_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Prerad.cir")
-OP27_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Postrad.cir")
+OP27_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Prerad_V1.cir")
+OP27_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/OP27_subckt_Postrad_V1.cir")
 OP27_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/OP27_Vos_Iib_Ios_testbench.cir")
+OP27_POSITIVE_IB_TEMPLATE = exe_tools.read_txt_file("testbenches/OP27_PositiveIb_testbench_V1.cir")
 
 # NPN and PNP parameters as dataframes
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')

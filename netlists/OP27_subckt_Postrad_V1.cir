@@ -1,0 +1,291 @@
+*Subcircuit name: OP27 Vee InvOutput NonInvInput Output Vcc
+*Nodes
+*V(+)           14
+*V(-)           4
+*IN(+)          69
+*IN(-)          76
+*OUT            6
+**************************
+.subckt OP27 4 76 69 6 14
+
+*Diode: D<name> <+ node> <- node> <model name> [area value]
+D1         69 76 DMODNPN 2.00 Temp=25
+D2         76 69 DMODNPN 1.90 Temp=25
+D11        64 68 DMODNPN 0.75 Temp=25
+D12a       76 64 DMODNPN 1.99 Temp=25
+D12b       76 64 DMODNPN 1.99 Temp=25
+D13a       69 64 DMODNPN 1.99 Temp=25
+D13b       69 64 DMODNPN 1.99 Temp=25
+D16        68 66 DMODNPN 2.02 Temp=25
+D17        68 66 DMODNPN 1.99 Temp=25
+D18        59 41 DMODNPN 0.69 Temp=25
+D19        67 47 DMODNPN 0.70 Temp=25
+D20        32 63 DMODNPN 2.82 Temp=25
+D21        32 65 DMODNPN 1 Temp=25
+D22        32 62 DMODNPN 1.33 Temp=25
+D23        32 28 DMODNPN 0.80 Temp=25
+D24        32 29 DMODNPN 2.77 Temp=25
+D27        9 44 DMODNPN 0.75 Temp=25
+D28        9 45 DMODNPN 0.70 Temp=25
+D29        42 9 DMODNPN 0.69 Temp=25
+D39        31 32 DMODNPN 0.69 Temp=25
+D40        34 4 DMODNPN 0.75 Temp=25
+D41        33 34 DMODNPN 0.69 Temp=25
+D44        16 15 DMODNPN 3.77 Temp=25
+D47        15 7 DMODNPN 0.64 Temp=25
+D48        18 19 DMODNPN 1.98 Temp=25
+D49        18 4 DMODNPN 0.72 Temp=25
+D50        12 6 DMODNPN 0.69 Temp=25
+D51        13 12 DMODNPN 7.14 Temp=25
+D54        1 3 DMODNPN 1.98 Temp=25
+D55        21 1 DMODNPN 0.64 Temp=25
+D57        51 52 DMODNPN 0.69 Temp=25
+D58        50 51 DMODNPN 0.75 Temp=25
+D59        48 50 DMODNPN 0.82 Temp=25
+D60        49 48 DMODNPN 0.69 Temp=25
+D61        54 53 DMODNPN 0.69 Temp=25
+
+*PNP
+
+D3         14 35 DMODPNP 1.19 Temp=25
+D4         14 35 DMODPNP 1.19 Temp=25
+D5         14 35 DMODPNP 1.19 Temp=25
+D6         81 78 DMODPNP 1.19 Temp=25
+D7         80 78 DMODPNP 1.19 Temp=25
+D8         79 78 DMODPNP 1.19 Temp=25
+D9         35 79 DMODPNP 1.34 Temp=25
+D10        78 77 DMODPNP 1.45 Temp=25
+D14        68 64 DMODPNP 1.36 Temp=25
+D15        66 64 DMODPNP 1.34 Temp=25
+D25        39 41 DMODPNP 1.19 Temp=25
+D26        46 47 DMODPNP 1.16 Temp=25
+D30        43 24 DMODPNP 1.82 Temp=25
+D31        22 24 DMODPNP 1.34 Temp=25
+D32        23 24 DMODPNP 2.21 Temp=25
+D33        38 26 DMODPNP 2.30 Temp=25
+D34        38 26 DMODPNP 0.29 Temp=25
+D35        14 37 DMODPNP 0.94 Temp=25
+D36        14 37 DMODPNP 0.94 Temp=25
+D37        14 37 DMODPNP 0.94 Temp=25
+D38        14 37 DMODPNP 0.94 Temp=25
+D42        25 30 DMODPNP 1.16 Temp=25
+D43        27 30 DMODPNP 1.19 Temp=25
+D45        8 15 DMODPNP 1.19 Temp=25
+D46        7 15 DMODPNP 31.24 Temp=25
+D52        6 7 DMODPNP 1.19 Temp=25
+D53        17 5 DMODPNP 2.77 Temp=25
+D56        36 26 DMODPNP 1.19 Temp=25
+
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+
+*Input pair is Q1&Q2
+*NPN
+
+Q1         69 69 76 NPN_COMPACT 2.00 Temp=25
+Q2         76 76 69 NPN_COMPACT 1.90 Temp=25
+Q11        77 64 68 NPN_COMPACT 0.75 Temp=25
+Q12a       67 76 64 NPN_COMPACT 1.99 Temp=25
+Q12b       67 76 64 NPN_COMPACT 1.99 Temp=25
+Q13a       59 69 64 NPN_COMPACT 1.99 Temp=25
+Q13b       59 69 64 NPN_COMPACT 1.99 Temp=25
+Q16        47 68 66 NPN_COMPACT 2.02 Temp=25
+Q17        41 68 66 NPN_COMPACT 1.99 Temp=25
+Q18        14 59 41 NPN_COMPACT 0.69 Temp=25
+Q19        14 67 47 NPN_COMPACT 0.70 Temp=25
+Q20        64 32 63 NPN_COMPACT 2.82 Temp=25
+Q21        66 32 65 NPN_COMPACT 1 Temp=25
+Q22        37 32 62 NPN_COMPACT 1.33 Temp=25
+Q23        31 32 28 NPN_COMPACT 0.80 Temp=25
+Q24        30 32 29 NPN_COMPACT 2.77 Temp=25
+Q27        21 9 44 NPN_COMPACT 0.75 Temp=25
+Q28        42 9 45 NPN_COMPACT 0.70 Temp=25
+Q29        14 42 9 NPN_COMPACT 0.69 Temp=25
+Q39        14 31 32 NPN_COMPACT 0.69 Temp=25
+Q40        35 34 4 NPN_COMPACT 0.75 Temp=25
+Q41        33 33 34 NPN_COMPACT 0.69 Temp=25
+Q44        14 16 15 NPN_COMPACT 3.77 Temp=25
+Q47        5 15 7 NPN_COMPACT 0.64 Temp=25
+Q48        15 18 19 NPN_COMPACT 1.98 Temp=25
+Q49        18 18 4 NPN_COMPACT 0.72 Temp=25
+Q50        13 12 6 NPN_COMPACT 0.69 Temp=25
+Q51        14 13 12 NPN_COMPACT 7.14 Temp=25
+Q54        5 1 3 NPN_COMPACT 1.98 Temp=25
+Q55        14 21 1 NPN_COMPACT 0.64 Temp=25
+Q57        14 51 52 NPN_COMPACT 0.69 Temp=25
+Q58        14 50 51 NPN_COMPACT 0.75 Temp=25
+Q59        14 48 50 NPN_COMPACT 0.82 Temp=25
+Q60        14 49 48 NPN_COMPACT 0.69 Temp=25
+Q61        14 54 53 NPN_COMPACT 0.69 Temp=25
+
+*PNP
+
+Q3         81 35 14 LPNP_COMPACT 1.19 Temp=25
+Q4         80 35 14 LPNP_COMPACT 1.19 Temp=25
+Q5         79 35 14 LPNP_COMPACT 1.19 Temp=25
+Q6         76 78 81 LPNP_COMPACT 1.19 Temp=25
+Q7         69 78 80 LPNP_COMPACT 1.19 Temp=25
+Q8         77 78 79 LPNP_COMPACT 1.19 Temp=25
+Q9         4 79 35 SPMOD 0.06 Temp=25
+Q10        4 77 78 SPMOD 0.07 Temp=25
+Q14        4 64 68 SPMOD 0.06 Temp=25
+Q15        4 64 66 SPMOD 0.06 Temp=25
+Q25        42 41 39 LPNP_COMPACT 1.19 Temp=25
+Q26        21 47 46 LPNP_COMPACT 1.16 Temp=25
+Q30        38 24 43 LPNP_COMPACT 1.82 Temp=25
+Q31        18 24 22 LPNP_COMPACT 1.34 Temp=25
+Q32        16 24 23 LPNP_COMPACT 2.21 Temp=25
+Q33        40 26 38 LPNP_COMPACT 2.30 Temp=25
+Q34        26 26 38 LPNP_COMPACT 0.29 Temp=25
+Q35        37 37 14 LPNP_COMPACT 0.94 Temp=25
+Q36        17 37 14 LPNP_COMPACT 0.94 Temp=25
+Q37        17 37 14 LPNP_COMPACT 0.94 Temp=25
+Q38        17 37 14 LPNP_COMPACT 0.94 Temp=25
+Q42        30 30 25 LPNP_COMPACT 1.16 Temp=25
+Q43        31 30 27 LPNP_COMPACT 1.19 Temp=25
+Q45        18 15 8 LPNP_COMPACT 1.19 Temp=25
+Q46        4 15 7 SPMOD 2.12 Temp=25
+Q52        11 7 6 LPNP_COMPACT 1.19 Temp=25
+Q53        4 5 17 SPMOD 0.22 Temp=25
+Q56        4 26 36 SPMOD 0.06 Temp=25
+
+*Resistance
+
+R1          65 4 536.25 
+R2          63 4 536.25 
+R3          63 4 536.25 
+R4          62 4 536.25 
+R5          28 4 429 
+R6          28 29 742.5 
+R7          39 40 707.1 
+R8          46 40 707.1 
+R9          21 42 25.692K 
+R10         45 4 89.4 
+R11         44 4 89.42 
+R12         14 43 137.5 
+R13         14 22 754.3 
+R14         14 23 107.6 
+R15         33 31 44.9183K 
+R16         25 26 1.485K 
+R17         26 27 1.485K 
+R18         14 33 608.7223K 
+R19         19 4 693
+R20         8 6 804.4 
+R21         6 12 9.8 
+R22         6 7 9.8
+R23         11 10 555 
+R24         10 9 360 
+R25         17 13 1.2375K 
+R26         16 20 266.5 
+R27         9 2 4.7614K
+R28         2 4 1.7679K 
+R29         1 2 4.4314K 
+R30         24 36 330 
+R31         3 4 41.3 
+R32         16 5 74.5 
+R33         59 60 88 
+R34         59 61 577.5 
+R35         14 58 2.55K 
+R36         58 52 2.55K
+R37         14 74 2.55K 
+R38         74 53 2.55K 
+R39         52 57 158.6 
+R40         57 51 158.6 
+R41         51 50 158.6 
+R42         50 48 158.6 
+R43         50 48 158.6 
+R44         48 55 158.6 
+R45         48 55 158.6 
+R46         59 56 9.15K 
+R47         67 75 9.15K 
+R48         54 75 9.15K 
+R49         56 55 9.15K 
+R50         54 73 158.6
+R51         54 73 158.6 
+R52         73 72 158.6 
+R53         73 72 158.6 
+R54         72 71 158.6 
+R55         71 70 158.6 
+R56         70 53 158.6 
+R57         55 49 158.6 
+R58         55 49 158.6
+
+*Capacitance
+
+C1          60 21 79.6P 
+C2          14 67 159P 
+C3          61 16 104P 
+C4          20 21 21.9P 
+ 
+.ends
+
+.model NPN_COMPACT NPN(               
++IS=2.354912E-16
++BF=84.058
++NF=0.986787     
++VAF=351.9861415
++IKF=9.86E-3
++NK=0.47574  
++ISE=7.1029E-15
++NE=2.06453  
++BR=0.697       
++NR=2
++VAR=100
++IKR=0.1         
++ISC=1E-17
++NC=2                          
++RB=140.86       
++IRB=1E-3 
++RBM=50                        
++RE=2           
++RC=250.75)
+
+.model LPNP_compact PNP (
++IS=7.40964E-16
++BF=90.9
++NF=0.99         
++VAF=36.3423711
++IKF=1.30957E-4  
++NK=0.52
++ISE=6E-16
++NE=1.27089 
++BR=0.697 
++NR=2
++VAR=100  
++IKR=0.1 
++ISC=1E-17
++ NC=2    
++RB=758.578   
++IRB=3.6E-5
++ RBM=100    
++RE=4.096  
++RC=1)
+ 
+.model SPMOD PNP(
++ IS=11E-15
++ BF=8500
++ NF=0.99
++ VAF=36.3423711
++ IKF=900E-6
++ NK=0.52
++ ISE=0.08E-15 
++ NE=1.3
++ BR=0.697
++ NR=2
++ VAR=100
++ IKR=0.1
++ ISC=1E-17
++ NC=2
++ RB=3058.578 
++ IRB=3.6E-5
++ RBM=100
++ RE=4
++ RC=1)
+
+.model DMODPNP D (IS = {PNP_IS}
++ N = {PNP_N})
+
+.model DMODNPN D (IS = {NPN_IS}
++ N = {NPN_N})
+
+.END

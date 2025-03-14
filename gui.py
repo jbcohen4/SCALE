@@ -40,31 +40,33 @@ for i in range(total_columns):
     root.grid_columnconfigure(i, weight=1)
 
 # Container frame for the header (logo row)
-header_frame = tk.Frame(root, bg="gold", height=100)
+BG_COLOR = "gold" 
+HEADER_COLOR = 'white'
+header_frame = tk.Frame(root, bg=BG_COLOR, height=100)
 header_frame.grid(row=0, column=0, columnspan=total_columns, sticky="ew")
 
 # ASU logo
 asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
-asu_logo_resized = asu_logo.resize((144, 81), Image.LANCZOS)
+asu_logo_resized = asu_logo.resize((220, 130), Image.LANCZOS)
 asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
 
-canvas_asu = tk.Canvas(header_frame, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas_asu = tk.Canvas(header_frame, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg=BG_COLOR, bd=0, highlightthickness=0)
 canvas_asu.create_image(0, 0, anchor="nw", image=asu_logo_tk)
 canvas_asu.pack(side="left", anchor="w", padx=10, pady=2)  # Padding on left side
 
 # Sandia logo
-sandia_logo = Image.open(exe_tools.adjust_path('images/Sandia_logo.png'))
-sandia_logo_resized = sandia_logo.resize((144, 81), Image.LANCZOS)
+sandia_logo = Image.open(exe_tools.adjust_path('images/sandia_logo_black.png'))
+sandia_logo_resized = sandia_logo.resize((130, 110), Image.LANCZOS)
 sandia_logo_tk = ImageTk.PhotoImage(sandia_logo_resized)
 
-canvas_sandia = tk.Canvas(header_frame, width=sandia_logo_tk.width(), height=sandia_logo_tk.height(), bg="gold", bd=0, highlightthickness=0)
+canvas_sandia = tk.Canvas(header_frame, width=sandia_logo_tk.width(), height=sandia_logo_tk.height(), bg=BG_COLOR, bd=0, highlightthickness=0)
 canvas_sandia.create_image(0, 0, anchor="nw", image=sandia_logo_tk)
-canvas_sandia.pack(side="right", anchor="e", padx=10, pady=2)  # Padding on right side
+canvas_sandia.pack(side="right", anchor="e", padx=30, pady=2)  # Padding on right side
 
 root.grid_rowconfigure(1, minsize=5) 
 
 # New row for the navigation buttons (row 1)
-button_frame = tk.Frame(root, bg="gold", height=50)
+button_frame = tk.Frame(root, bg=BG_COLOR, height=50)
 button_frame.grid(row=2, column=0, columnspan=total_columns, sticky="ew")
 
 # Navigation buttons
@@ -139,7 +141,6 @@ def create_fluence_gui():
         except NameError:
             print("Message widget not found. Logging to console:")
             print(message)
-
 
     # Function to create the message frame within the graph frame
     def setup_graph():
@@ -216,7 +217,6 @@ def create_fluence_gui():
             # Stop the progress bar
             root.after(0, stop_progress_bar)
         
-
     def display_error_message(error_message):
         #Clear the graph area and display a generic error message.
         for widget in fluence_frame.winfo_children():
@@ -229,7 +229,6 @@ def create_fluence_gui():
         graph_frame = create_frame(4, 0, "Graph", width=20, height=4)
         error_label = tk.Label(graph_frame, text=error_message, fg="red", font=("Arial", 14), bg="white", wraplength=400)
         error_label.pack(expand=True, fill="both")
-
 
     # Function to draw the graph with new data
     def draw_graph(data, Selected_Part, Selected_Specification):
@@ -340,8 +339,8 @@ def create_fluence_gui():
         fluence_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
     # Dropdown Parts
@@ -367,10 +366,10 @@ def create_fluence_gui():
     datasheet_button = tk.Button(frame1, text="Open Datasheet", command=lambda: threading.Thread(target=datasheet_open, daemon=True).start(), width=15, height=1, bg="brown4", fg="white", bd=0, relief="solid")
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
-    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Specifications.grid(row=1, column=0, sticky="e")
 
-    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="black")
+    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
     label_Specification_Typical.grid(row=1, column=2, sticky="e")
 
     # Dropdown Specifications
@@ -419,16 +418,16 @@ def create_fluence_gui():
     progress_bar.grid_remove()
 
     # Progress bar label 
-    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg="gold")
+    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
     progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -459,24 +458,24 @@ def create_fluence_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
     spinbox_vee.grid(row=1, column=1, sticky="w")
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_temp.grid(row=2, column=0, sticky="e")
 
     spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
     spinbox_temp.grid(row=2, column=1, sticky="w")
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="red")
+    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    label_neutron_type = tk.Label(frame3, text="Neutron Type:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame3 = create_frame(2, 4, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    label_neutron_type = tk.Label(frame3, text="Neutron Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_neutron_type.grid(row=0, column=0, sticky="e")
 
     # Dropdown Neutron Type
@@ -486,10 +485,10 @@ def create_fluence_gui():
     dropdown_neutron = OptionMenu(frame3, var_neutron, *options_neutron)
     dropdown_neutron.grid(row=0, column=1, sticky="w", padx=5, pady=5)
     dropdown_neutron.config(bg="white")
-    neutron_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    neutron_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     neutron_type_uom.grid(row=0, column=2, sticky="e")
 
-    label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_fluences_min.grid(row=1, column=0, sticky="e")
     # formattign the fluences
     fluence_mapping = {f"{fluence:.2E}": backend for fluence, backend in zip(FLUENCES, BACKEND_FLUENCES)}
@@ -500,7 +499,7 @@ def create_fluence_gui():
     fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences[:-1], height=10, width=10)  # Limiting dropdown height to 10 items
     fluence_min_combobox.grid(row=1, column=1, sticky="w")
 
-    label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_fluences_max.grid(row=2, column=0, sticky="e")
     fluence_max_var = StringVar(root)
     fluence_max_var.set(formatted_fluences[-1])
@@ -533,7 +532,7 @@ def create_fluence_gui():
     update_default_voltage()
 
     # Frame 4
-    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # Button size
     button_text_scale = "Change to Log Scale"
     button_width = len(button_text_scale) + 4  # Add some padding to the width
@@ -827,8 +826,8 @@ def create_tid_gui():
         tid_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
     # Dropdown Parts
@@ -854,10 +853,10 @@ def create_tid_gui():
     datasheet_button = tk.Button(frame1, text="Open Datasheet", command=lambda: threading.Thread(target=datasheet_open, daemon=True).start(), width=15, height=1, bg="brown4", fg="white", bd=0, relief="solid")
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
-    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Specifications.grid(row=1, column=0, sticky="e")
 
-    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="black")
+    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
     label_Specification_Typical.grid(row=1, column=2, sticky="e")
 
     # Dropdown Specifications
@@ -906,16 +905,16 @@ def create_tid_gui():
     progress_bar.grid_remove()
 
     # Progress bar label 
-    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg="gold")
+    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
     progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -946,26 +945,26 @@ def create_tid_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
     spinbox_vee.grid(row=1, column=1, sticky="w")
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_temp.grid(row=2, column=0, sticky="e")
 
     spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
     spinbox_temp.grid(row=2, column=1, sticky="w")
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="red")
+    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
-    label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dr_type.grid(row=0, column=0, sticky="e")
     options_dr = DOSE_RATE
     var_dr = StringVar()
@@ -975,7 +974,7 @@ def create_tid_gui():
     dropdown_dr.config(bg="white")
 
     # Hydrogen label and DropDown
-    label_h2_type = tk.Label(frame3, text="Hydrogen (%):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_h2_type = tk.Label(frame3, text="Hydrogen (%):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_h2_type.grid(row=1, column=0, sticky="e")
     options_h2 = HYDROGEN
     var_h2 = StringVar()
@@ -985,7 +984,7 @@ def create_tid_gui():
     dropdown_h2.config(bg="white")
 
     # Bias label and DropDown
-    label_bi_type = tk.Label(frame3, text="Bias (V):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_bi_type = tk.Label(frame3, text="Bias (V):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_bi_type.grid(row=2, column=0, sticky="e")
     options_bi = BIAS
     var_bi = StringVar()
@@ -1035,13 +1034,13 @@ def create_tid_gui():
     # Calling update function with the default value when the dropdown is created
     update_hydrogen()  
 
-    label_total_dose_min = tk.Label(frame3, text="Total Dose Min (krad):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_total_dose_min = tk.Label(frame3, text="Total Dose Min (krad):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_total_dose_min.grid(row=0, column=2, sticky="e")
 
     total_dose_min_combobox = ttk.Combobox(frame3, textvariable=total_dose_min_var, values=[], height=10, width=10) 
     total_dose_min_combobox.grid(row=0, column=3, sticky="w")
 
-    label_total_dose_max = tk.Label(frame3, text="Total Dose Max (krad)):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_total_dose_max = tk.Label(frame3, text="Total Dose Max (krad)):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_total_dose_max.grid(row=1, column=2, sticky="e")
 
     total_dose_max_combobox = ttk.Combobox(frame3, textvariable=total_dose_max_var, values=[], height=10, width=10)  
@@ -1051,7 +1050,7 @@ def create_tid_gui():
     update_default_voltage()
 
     # Frame 4
-    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # Button size
     button_text_scale = "Change to Log Scale"
     button_width = len(button_text_scale) + 4  # Add some padding to the width
@@ -1321,8 +1320,8 @@ def create_ion_fluence_gui():
         tid_fluence_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
     # Dropdown Parts
@@ -1348,10 +1347,10 @@ def create_ion_fluence_gui():
     datasheet_button = tk.Button(frame1, text="Open Datasheet", command=lambda: threading.Thread(target=datasheet_open, daemon=True).start(), width=15, height=1, bg="brown4", fg="white", bd=0, relief="solid")
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
-    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Specifications.grid(row=1, column=0, sticky="e")
 
-    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="black")
+    label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
     label_Specification_Typical.grid(row=1, column=2, sticky="e")
 
     # Dropdown Specifications
@@ -1400,16 +1399,16 @@ def create_ion_fluence_gui():
     progress_bar.grid_remove()
 
     # Progress bar label 
-    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg="gold")
+    progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
     progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -1440,26 +1439,26 @@ def create_ion_fluence_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
     spinbox_vee.grid(row=1, column=1, sticky="w")
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_temp.grid(row=2, column=0, sticky="e")
 
     spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
     spinbox_temp.grid(row=2, column=1, sticky="w")
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg="gold", fg="red")
+    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "ION testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame3 = create_frame(2, 4, "ION testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
-    label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dr_type.grid(row=0, column=0, sticky="e")
     options_dr = DOSE_RATE_TF
     var_dr = StringVar()
@@ -1469,7 +1468,7 @@ def create_ion_fluence_gui():
     dropdown_dr.config(bg="white")
 
     # Hydrogen label and DropDown
-    label_h2_type = tk.Label(frame3, text="Hydrogen (%):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_h2_type = tk.Label(frame3, text="Hydrogen (%):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_h2_type.grid(row=1, column=0, sticky="e")
     options_h2 = HYDROGEN_TF
     var_h2 = StringVar()
@@ -1479,7 +1478,7 @@ def create_ion_fluence_gui():
     dropdown_h2.config(bg="white")
 
     # Bias label and DropDown
-    label_bi_type = tk.Label(frame3, text="Bias (V):", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_bi_type = tk.Label(frame3, text="Bias (V):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_bi_type.grid(row=2, column=0, sticky="e")
     options_bi = BIAS_TF
     var_bi = StringVar()
@@ -1489,7 +1488,7 @@ def create_ion_fluence_gui():
     dropdown_bi.config(bg="white")
 
     # Proton type
-    label_neutron_type = tk.Label(frame3, text="Proton Type:", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    label_neutron_type = tk.Label(frame3, text="Proton Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_neutron_type.grid(row=0, column=2, sticky="e")
     options_proton = PROTON_TYPE
     var_proton = StringVar()
@@ -1497,10 +1496,10 @@ def create_ion_fluence_gui():
     dropdown_proton = OptionMenu(frame3, var_proton, *options_proton)
     dropdown_proton.grid(row=0, column=3, sticky="w", padx=5, pady=5)
     dropdown_proton.config(bg="white")
-    proton_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg="gold")
+    proton_type_uom = tk.Label(frame3, text="equ.", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     proton_type_uom.grid(row=0, column=4, sticky="e")
     
-    label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_fluences_min = tk.Label(frame3, text="Fluence Min(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_fluences_min.grid(row=1, column=2, sticky="e")
     # formattign the fluences
     fluence_mapping = {f"{fluence:.2E}": backend for fluence, backend in zip(FLUENCES_TF, BACKEND_FLUENCES_TF)}
@@ -1511,7 +1510,7 @@ def create_ion_fluence_gui():
     fluence_min_combobox = ttk.Combobox(frame3, textvariable=fluence_min_var, values=formatted_fluences[:-1], height=10, width=10)  # Limiting dropdown height to 10 items
     fluence_min_combobox.grid(row=1, column=3, sticky="w")
 
-    label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg="gold")
+    label_fluences_max = tk.Label(frame3, text="Fluence Max(n/cm^2):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
     label_fluences_max.grid(row=2, column=2, sticky="e")
     fluence_max_var = StringVar(root)
     fluence_max_var.set(formatted_fluences[-1])
@@ -1544,7 +1543,7 @@ def create_ion_fluence_gui():
     update_default_voltage()
 
     # Frame 4
-    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg="gold")
+    frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # Button size
     button_text_scale = "Change to Log Scale"
     button_width = len(button_text_scale) + 4  # Add some padding to the width

@@ -123,4 +123,6 @@ print(processed_text)
 ```
 This worked!
 
+pyinstaller gui.spec works to create the executable.
+
 

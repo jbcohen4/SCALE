@@ -115,7 +115,9 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        # print(out_text)
+        print(stdout)
+        print(stderr)
+        print(return_code)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -1028,35 +1030,41 @@ def generate_data_for_OP27(VCC, VEE, fluence_min, fluence_max, specification: st
     subcircuit_pre_rad = OP27_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit_post_rad = OP27_SUBCKT_POST_RAD_TEMPLATE
 
-    testbench = process_string_with_replacements(OP27_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
+    testbench = process_string_with_replacements(OP27_POSITIVE_IB_TEMPLATE, {"Vcc": VCC, "Vee": VEE})
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
+    print(pre_rad_full_netlist)
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    print(post_rad_full_netlist)
     all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_os, ib, i_os = [], [], [], []
     # process for pre_rad
     pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
     set_fluence = 0
+    print(pre_rad_parsed_output)
     for row in pre_rad_parsed_output:
-        _, V_cc, V_out, V_os, Ib, I_os = row
+        # _, V_cc, V_out, V_os, Ib, I_os = row
+        _, V_cc, Ib = row
         if V_cc == 15:
             fluences.append(set_fluence)
-            v_os.append(V_os * 10 ** 6) # volts to μV
+            # v_os.append(V_os * 10 ** 6) # volts to μV
             ib.append(Ib * 10 ** 9)     # amps to nA
-            i_os.append(I_os * 10 ** 9) # amps to nA
+            # i_os.append(I_os * 10 ** 9) # amps to nA
             break
     # process for post_rad
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
-            _, V_cc, V_out, V_os, Ib, I_os = row
+            # _, V_cc, V_out, V_os, Ib, I_os = row
+            _, V_cc, Ib = row
             if V_cc == 15:
                 fluences.append(fluence)
-                v_os.append(V_os * 10 ** 6) # volts to μV
+                # v_os.append(V_os * 10 ** 6) # volts to μV
                 ib.append(Ib * 10 ** 9)     # amps to nA
-                i_os.append(I_os * 10 ** 9) # amps to nA
+                # i_os.append(I_os * 10 ** 9) # amps to nA
                 break
     if specification == "V_os":
         return {'TID(krad)': fluences, 'V_os (μV)': v_os}
