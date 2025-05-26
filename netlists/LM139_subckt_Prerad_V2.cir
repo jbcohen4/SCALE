@@ -1,4 +1,4 @@
-*Subcircuit name: LM139_sc POSTRAD
+*Subcircuit name: LM139_sc PRERAD
 **************************
 .subckt LM139_sc 12 1 7 13
 
@@ -6,37 +6,14 @@
 *Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
 **********************************
 *PNP
-D1 2 1 DMODSPMOD 1.09 temp=25
-D2 4 2 DMODPNP 0.9 temp=25
-D3 4 6 DMODPNP 0.9 temp=25
-D4 6 7 DMODSPMOD 1 temp=25
-D9 12 11 DMODPNP 0.8 temp=25
+D17 1 2 DMOD 1 temp=25
+D18 15 2 DMOD 1 temp=25
+D19 9 6 DMOD 1 temp=25
+D20 7 6 DMOD 1 temp=25
 
-D10 12 11 DMODPNP 0.8 temp=25
-D11 12 11 DMODPNP 0.8 temp=25
-
-
-D12 12 11 DMODPNP 0.1 temp=25
-D13 12 11 DMODPNP 0.1 temp=25
-D14 12 11 DMODPNP 0.5 temp=25
-D17 1 2 DMODPNP 0.7 temp=25
-D18 15 2 DMODPNP 0.7 temp=25
-D19 9 6 DMODPNP 0.7 temp=25
-D20 7 6 DMODPNP 0.7 temp=25
-D22 11 12 DMODPNP 0.8 temp=25
 
 *NPN
-D5 3 0 DMODNPN 0.9 temp=25
-D6 3 0 DMODNPN 0.9 temp=25
-D7 5 0 DMODNPN 0.3 temp=25
-D8 8 0 DMODNPN 10 temp=25
-
-*D15 14 10 DMODNPN 0.4 temp=25
-*D16 10 0 DMODNPN 0.4 temp=25
-D15 12 14 DMODNPN 0.4 temp=25
-D16 10 0 DMODNPN 10 temp=25
-
-D21 14 10 DMODNPN 0.4 temp=25
+D15 12 14 DMOD 1 temp=25
 
 
 *BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
@@ -59,15 +36,16 @@ Q12        15 11 12 LPNP_compact 0.1 temp=25
 Q13        9 11 12 LPNP_compact 0.1 temp=25
 Q14        4 11 12 LPNP_compact 0.5 temp=25
 
-*Q15        14 14 10 NPN_compact 0.4 temp=25
+**Q15        14 14 10 NPN_compact 0.4 temp=25
 *Q16        10 10 0 NPN_compact 0.4 temp=25
-Q15	   12 12 14 NPN_compact 0.4 temp=25
+*Q15	   12 12 14 NPN_compact 0.4 temp=25
 Q16	   14 10 0 NPN_compact 10 temp=25
 
-Q17        2 2 1 LPNP_compact 0.7 temp=25
-Q18        2 2 15 LPNP_compact 0.7 temp=25
-Q19        6 6 9 LPNP_compact 0.7 temp=25
-Q20        6 6 7 LPNP_compact 0.7 temp=25
+
+*Q17        2 2 1 LPNP_compact 0.7 temp=25
+*Q18        2 2 15 LPNP_compact 0.7 temp=25
+*Q19        6 6 9 LPNP_compact 0.7 temp=25
+*Q20        6 6 7 LPNP_compact 0.7 temp=25
 
 Q21	   11 14 10 NPN_compact 0.4 temp=25
 * Q22	   12 11 10 NPN_compact 0.8 temp=25
@@ -127,12 +105,12 @@ R1	   10 0 1K
 * Substrate PNP
 .model SPMOD PNP(
 + IS=4.07E-16
-+ BF=776
++ BF=20776
 + NF=0.99
 + VAF=36.3423711
-+ IKF=180E-7
++ IKF=900E-7
 + NK=0.52
-+ ISE=.01E-15 
++ ISE=1E-19 
 + NE=1.3
 + BR=0.697
 + NR=2
@@ -140,21 +118,27 @@ R1	   10 0 1K
 + IKR=0.1
 + ISC=1E-17
 + NC=2
-+ RB=3000 
++ RB=100000 
 + IRB=3.6E-5
 + RBM=100
-+ RE=5.3
++ RE=305.3
 + RC=1)
 
-.model DMODPNP D (IS = {PNP_IS}
-+ N = {PNP_N})
-
-.model DMODNPN D (IS = {NPN_IS}
-+ N = {NPN_N})
-
-.model DMODSPMOD D (IS = {SPMOD_IS}
-+ N = {SPMOD_N})
-
+.model DMOD D (IS = 4E-10
++ RS = .105
++ N = 1.48
++ TT = 8E-7
++ CJO = 1.95E-11
++ VJ = .4
++ M = .38
++ EG = 1.36
++ XTI = -8
++ KF = 0
++ AF = 1
++ FC = .9
++ BV = 600
++ IBV = 1E-4)
 
 *end of the list
 .end
+

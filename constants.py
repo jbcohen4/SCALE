@@ -22,8 +22,8 @@ LM741_TEMP_IB_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ib_tes
 LM741_TEMP_IOS_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ios_testbench.cir")
 
 #paths for the LM124
-LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad.cir")
-LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad.cir")
+LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad_test.cir")
+LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad_test.cir")
 LM124_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM124_Vos_Iib_Ios_testbench.cir")
 
 # paths for LM111
@@ -41,8 +41,8 @@ LM193_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Ii
 
 # paths for LM139
 # V0 is subckt shared by Ethan and V1 is the one shared by Triet - which is similar to 193
-LM139_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Prerad_V1.cir")
-LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Postrad_V1.cir")
+LM139_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Prerad_V2.cir")
+LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Postrad_V2.cir")
 LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_OutputCurrents_testbench_V0.cir")
 LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V1.cir")
 
@@ -182,26 +182,30 @@ TID_DOSES = ["DR=0.01_H2=0.1_B=0", "DR=0.1_H2=100_B=0", "DR=100_H2=100_B=0", "DR
 
 # TID MAPPING 
 TID_MAPPING = {
-    "DR=0.01_H2=0.1_B=0": ["csvs/TID_NPN_SHEET1_V0.csv","csvs/TID_PNP_SHEET1_V0.csv"],
-    "DR=0.1_H2=100_B=0": ["csvs/TID_NPN_SHEET2_V0.csv","csvs/TID_PNP_SHEET2_V0.csv"],
-    "DR=100_H2=100_B=0": ["csvs/TID_NPN_SHEET3_V0.csv","csvs/TID_PNP_SHEET3_V0.csv"],
-    "DR=100_H2=0_B=0": ["csvs/TID_NPN_SHEET4_V0.csv","csvs/TID_PNP_SHEET4_V0.csv"]
+    "DR=0.01_H2=0.1_B=0": ["csvs/TID_NPN_SHEET1_V0.csv","csvs/TID_PNP_SHEET1_V0.csv","csvs/TID_SPNP_SHEET1_V0.csv"], # Temporary
+    "DR=0.1_H2=100_B=0": ["csvs/TID_NPN_SHEET2_V0.csv","csvs/TID_PNP_SHEET2_V0.csv", "csvs/TID_SPNP_SHEET1_V0.csv"],
+    "DR=100_H2=100_B=0": ["csvs/TID_NPN_SHEET3_V0.csv","csvs/TID_PNP_SHEET3_V0.csv","csvs/TID_SPNP_SHEET2_V0.csv"],
+    "DR=100_H2=0_B=0": ["csvs/TID_NPN_SHEET4_V0.csv","csvs/TID_PNP_SHEET4_V0.csv","csvs/TID_SPNP_SHEET2_V0.csv"] # Temporary
 }
 
 # NPN & PNP selection based on TID input
 NPN_DF_TID = None
 PNP_DF_TID = None
+SPNP_DF_TID = None # Temporary
+
 TID_DOSE_MIN = None
 TID_DOSE_MAX = None
 
 def update_tid_dataframes(selection_key):
-    global NPN_DF_TID, PNP_DF_TID
+    global NPN_DF_TID, PNP_DF_TID, SPNP_DF_TID # Temporary
     if selection_key in TID_MAPPING:
         npn_file_path = TID_MAPPING[selection_key][0]
         pnp_file_path = TID_MAPPING[selection_key][1]
+        spnp_file_path = TID_MAPPING[selection_key][2] # Temporary
 
         NPN_DF_TID = exe_tools.read_csv_to_df(npn_file_path)
         PNP_DF_TID = exe_tools.read_csv_to_df(pnp_file_path)
+        SPNP_DF_TID = exe_tools.read_csv_to_df(spnp_file_path)  # Temporary
         
         # function to calculate the min and max dose
         calculate_min_max_dose(NPN_DF_TID, PNP_DF_TID)
@@ -237,7 +241,7 @@ def calculate_min_max_dose(npn_df, pnp_df):
     # print(f"Min dose: {TID_DOSE_MIN}, Max dose: {TID_DOSE_MAX}")
 
 def get_tid_dataframes():
-    return NPN_DF_TID, PNP_DF_TID
+    return NPN_DF_TID, PNP_DF_TID, SPNP_DF_TID
 
 def get_tid_dose_limits():
     return (TID_DOSE_MIN, TID_DOSE_MAX)

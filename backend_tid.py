@@ -115,9 +115,10 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        print(stdout)
-        print(stderr)
-        print(return_code)
+        # print(out_text)
+        # print(stdout)
+        # print(stderr)
+        # print(return_code)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -185,6 +186,72 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             all_task_args = [
                 (row_npn, row_pnp, row_index, None)
                 for row_index, ((_, row_npn), (_, row_pnp)) in enumerate(zip(NPN_DF_TID.iterrows(), PNP_DF_TID.iterrows()), start=1)
+            ]
+        # Execute the tasks
+        # print(all_task_args)
+        results = list(ex.map(lambda args: process_row(*args), all_task_args))
+        # print(results)
+        return results
+
+# SPNP Diode Values test
+def get_all_xyce_output_txt_test(netlist_template: str, Vos_values: List[float] = None) -> List[Tuple[float, str]]:
+    """Returns an array of (float, str) tuples. The float represents the fluences of the run, the string is the data that xyce gave us back."""
+    assert "{output_filename}" in netlist_template
+    def process_row(row_npn, row_pnp, row_index, row_spnp, vos=None):
+        avg_fluences = (row_npn['Dose(krad)'] + row_pnp['Dose(krad)'] + row_spnp['Dose(krad)']) / 3
+        netlist_tempfile = tempfile.NamedTemporaryFile(delete=False)
+        xyce_output_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            netlist_tempfile.close()
+            xyce_output_file.close()
+            temp_netlist_filename = netlist_tempfile.name
+            temp_xyce_output_filename = xyce_output_file.name
+            d = {
+                "output_filename": temp_xyce_output_filename,
+                "PNP_IS": row_pnp['Is'],
+                "PNP_N": row_pnp['n'],
+                "NPN_IS": row_npn['Is'],
+                "NPN_N": row_npn['n'],
+                "SPMOD_IS": row_spnp['Is'],
+                "SPMOD_N": row_spnp['n']
+            }
+            if vos is not None:  # Add vos to the dictionary only if vos_list is not None
+                d["Vos"] = round(vos,3)
+            filled_in_netlist_str = process_string_with_replacements(netlist_template, d)
+            write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
+            
+            # For Debugging - in case netlist need to be printed and checked
+            # write_output_to_multiple_file("NETLIST_LM139", filled_in_netlist_str, row_index)
+            # print(filled_in_netlist_str)
+        
+            cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
+            stdout, stderr, return_code = run_command(cmd_string)
+            # print(f"stdout: {stdout}")
+            # print(f"stderr: {stderr}")
+            # print(f"return_code: {return_code}")
+            # print(out_text)
+            out_text = read_file_as_string(temp_xyce_output_filename)
+            # print(out_text)
+            assert len(out_text) > 0
+            return (avg_fluences, out_text)
+        finally:
+                netlist_tempfile.close()
+                xyce_output_file.close()
+                os.remove(netlist_tempfile.name)
+                os.remove(xyce_output_file.name)
+    
+    with concurrent.futures.ThreadPoolExecutor() as ex:
+        NPN_DF_TID, PNP_DF_TID, SPNP_DF_TID = get_tid_dataframes()
+        if Vos_values is not None and Vos_values:
+            # Create task arguments with vos
+            all_task_args = [
+                (row_npn, row_pnp, row_index, vos, row_spnp)
+                for row_index, ((_, row_npn), (_, row_pnp), (_, row_spnp), vos) in enumerate(zip(NPN_DF_TID.iterrows(), PNP_DF_TID.iterrows(), SPNP_DF_TID.iterrows(), Vos_values), start=1)]
+        else:
+            # If vos_list is None or empty, use None for Vos
+            all_task_args = [
+                (row_npn, row_pnp, row_index, row_spnp, None)
+                for row_index, ((_, row_npn), (_, row_pnp), (_, row_spnp)) in enumerate(zip(NPN_DF_TID.iterrows(), PNP_DF_TID.iterrows(), SPNP_DF_TID.iterrows()), start=1)
             ]
         # Execute the tasks
         # print(all_task_args)
@@ -558,7 +625,7 @@ def generate_data_for_LM124(VCC, VEE, fluence_min, fluence_max, specification: s
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     full_netlist = testbench + "\n" + subcircuit
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
-    all_xyce_output = get_all_xyce_output_txt(full_netlist)
+    all_xyce_output = get_all_xyce_output_txt_test(full_netlist)
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_os, i_ib, i_os = [], [], [], [] 
     # process for pre_rad
@@ -926,18 +993,22 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
     pre_rad_full_netlist = testbench + "\n" + subcircuit_pre_rad
     post_rad_full_netlist = testbench + "\n" + subcircuit_post_rad
 
+    # print(pre_rad_full_netlist)
     xyce_output_pre_rad = get_pre_rad_xyce_output_txt(pre_rad_full_netlist)
+    print('GOT PRE_RAD_OUTPUT')
 
-    all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
+    all_xyce_output = get_all_xyce_output_txt_test(post_rad_full_netlist)
+    print('GOT POST_RAD_OUTPUT')
 
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
     fluences, v_os, i_ib, i_os = [], [], [], []
 
+    # print(xyce_output_pre_rad)
     # process for pre_rad
     pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)
     set_fluence = 0
     for row in pre_rad_parsed_output:
-        _, V_os, V_out, I_ib, I_os = row
+        _, V_os, V_out, I_ib, I_os, temp1, temp2 = row
         if V_os == 0:
             fluences.append(set_fluence)
             i_ib.append(I_ib * 10 ** 9) # amps to nA
@@ -954,13 +1025,15 @@ def generate_data_for_LM139_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         #     with open("output/post_rad_LM139.txt", 'w') as file:
         #         file.write(out_text)
         #     store = True
+        print(out_text)
         parsed_output = parse_output_data_dynamic(out_text)
         for row in parsed_output:
-            _, V_os, V_out, I_ib, I_os = row
+            _, V_os, V_out, I_ib, I_os, temp1, temp2 = row
             if V_os == 0:
                 temp_ib = I_ib * 10 ** 9
                 temp_os = I_os * 10 ** 9
-            if V_out >  4.89:
+            # if V_out >  4.89:
+                print(temp_ib)
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 fluences.append(fluence)
                 i_ib.append(temp_ib) # amps to nA

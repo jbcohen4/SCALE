@@ -1,4 +1,4 @@
-Title: LM139 / Prerad
+Title: LM139 / Vos_Ios_Ib
 *************************************
 
 *Voltage Source
@@ -10,13 +10,14 @@ VOUT 7 0 DC 5V
 
 X1 5 1 2 3 LM139_sc
 RR3 3 7 5k
+*RR3 3 7 1k
 
 RR1 1 6 0
 RR2 2 0 0
 VP 6 0 DC 0V
 
 *Input
-.dc VP -0.1 0.1 0.0001
+.dc VP -0.1 0.1 0.001
 
 *Output
 .print dc format=noindex file={output_filename}
@@ -24,4 +25,7 @@ VP 6 0 DC 0V
 + V(3)
 + {(I(RR2)+I(RR1))/2}
 + {I(RR2)-I(RR1)}
++ I(RR1)
++ I(RR2)
+
 
