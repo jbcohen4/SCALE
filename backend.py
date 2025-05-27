@@ -544,7 +544,7 @@ def generate_data_for_LM741_CMRR(VCC, VEE, fluence_min, fluence_max, specificati
         assert False
 
 def generate_data_for_LM124(VCC, VEE, fluence_min, fluence_max, specification: str):
-    # print('Processing LM124')
+    print('Processing LM124')
     subcircuit_pre_rad = LM124_SUBCKT_PRE_RAD_TEMPLATE
     subcircuit = LM124_SUBCKT_POST_RAD_TEMPLATE
     testbench = process_string_with_replacements(LM124_VOS_TESTBENCH_TEMPLATE, {"Vcc": VCC, "Vee": VEE})

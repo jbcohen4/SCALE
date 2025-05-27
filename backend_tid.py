@@ -115,9 +115,9 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
         stdout, stderr, return_code = run_command(cmd_string)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        print(stdout)
-        print(stderr)
-        print(return_code)
+        # print(stdout)
+        # print(stderr)
+        # print(return_code)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -155,7 +155,7 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             write_string_to_file(temp_netlist_filename, filled_in_netlist_str)
             
             # For Debugging - in case netlist need to be printed and checked
-            # write_output_to_multiple_file("NETLIST_LM139", filled_in_netlist_str, row_index)
+            # write_output_to_multiple_file("NETLIST_LM111", filled_in_netlist_str, row_index)
             # print(filled_in_netlist_str)
 
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
@@ -164,7 +164,12 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             # print(f"stderr: {stderr}")
             # print(f"return_code: {return_code}")
             out_text = read_file_as_string(temp_xyce_output_filename)
+            
             # print(out_text)
+            # Alternative: append to a single file with index markers
+            # write_output_to_file("XYCE_OUTPUT.txt", out_text, row_index)
+            
+            
             assert len(out_text) > 0
             return (avg_fluences, out_text)
         finally:
@@ -622,12 +627,14 @@ def generate_data_for_LM111_OUTPUT_CURRENT(VCC, VEE, fluence_min, fluence_max, s
 
     # process for post_rad
     store = False
+    print(xyce_output)
     for fluence, out_text in xyce_output:
         assert fluence_min <= fluence <= fluence_max
         # if store == False:
         #     with open("output/post_rad_LM193.txt", 'w') as file:
         #         file.write(out_text)
         #     store = True
+        print(out_text)
         parsed_output = parse_output_data_dynamic(out_text)
         for index, row in enumerate(parsed_output[:2]):
             _, v_2, i_vout = row
@@ -676,14 +683,16 @@ def generate_data_for_LM111_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
         #     with open("output/post_rad_LM111.txt", 'w') as file:
         #         file.write(out_text)
         #     store = True
-        
+
         parsed_output = parse_output_data_dynamic(out_text)
+        flag = False
         for row in parsed_output:
             _, V_os, V_out, I_ib, I_os = row
             if V_os == 0:
                 temp_ib = I_ib * 10 ** 9
                 temp_os = I_os * 10 ** 9
-            if V_out >  4.89:
+                flag = True
+            if V_out >  4.89 and flag:
                 v_os.append(V_os * 10 ** 3) # volts to mV
                 fluences.append(fluence)
                 i_ib.append(temp_ib) # amps to nA
@@ -691,7 +700,7 @@ def generate_data_for_LM111_VOS(VCC, VEE, fluence_min, fluence_max, specificatio
                 break
         else:
             continue
-            assert False # we skip assert false if any fluence is not available in the output
+            assert False # we skip assert false if any TID is not available in the output
 
     if specification == "V_os":
         return {'TID(krad)': fluences, 'V_os (mV)': v_os}

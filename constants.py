@@ -22,13 +22,13 @@ LM741_TEMP_IB_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ib_tes
 LM741_TEMP_IOS_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ios_testbench.cir")
 
 #paths for the LM124
-LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad.cir")
-LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad.cir")
+LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad_V1.cir")
+LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad_V1.cir")
 LM124_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM124_Vos_Iib_Ios_testbench.cir")
 
 # paths for LM111
-LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad.cir")
-LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Postrad.cir")
+LM111_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Prerad_V1.cir")
+LM111_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM111_subckt_Postrad_V1.cir")
 LM111_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_OutputCurrents_testbench.cir")
 LM111_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Iib_Ios_testbench.cir")
 

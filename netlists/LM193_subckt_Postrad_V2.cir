@@ -1,0 +1,139 @@
+*Subcircuit name: LM193_sc (VCC VEE IN+ IN- OUT)
+**************************
+.subckt LM193_sc 21 25 22 23 24
+
+*Diode
+******
+*PNP
+D1 21 2 DMODPNP 0.8 temp=27
+D2 21 2 DMODPNP 0.8 temp=27
+D3 21 2 DMODPNP 0.7 temp=27
+D4 21 2 DMODPNP 0.1 temp=27
+D5 21 2 DMODPNP 0.5 temp=27
+D6 21 2 DMODPNP 0.1 temp=27
+D7 21 2 DMODPNP 0.7 temp=27
+D10 6 8 DMODPNP 0.9 temp=27
+D11 6 7 DMODPNP 0.9 temp=27
+D12 8 22 DMODSPMOD 0.89 temp=27
+D13 7 23 DMODSPMOD 0.86 temp=27
+
+*NPN
+D8 4 3 DMODNPN 0.5 temp=27
+D9 3 25 DMODNPN 16.8 temp=27
+D14 10 25 DMODNPN 0.9 temp=27
+D15 10 25 DMODNPN 0.9 temp=27
+D16 11 25 DMODNPN 0.4 temp=27
+D17 9 25 DMODNPN 16.8 temp=27
+
+*Diode: D<name> <+ node> <- node> <model name> [area value]
+D25 4 21 DMOD 1 temp=27
+D24 23 7 DMOD 1 temp=27
+D23 13 7 DMOD 1 temp=27
+D22 15 8 DMOD 1 temp=27
+D21 22 8 DMOD 1 temp=27
+
+*Resistance: R<name> <+ node> <- node> [model name] <value>
+R1 3 25 4100
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+*Current Source
+Q1 2 2 21 QLPMOD 0.8 temp=27
+Q2 4 2 21 QLPMOD 0.8 temp=27
+Q3 3 2 21 QLPMOD 0.7 temp=27
+Q8 2 4 3 QNMOD 0.5 temp=27
+Q9 4 3 25 QNMOD 16.8 temp=27
+
+Q4 15 2 21 QLPMOD 0.1 temp=27
+Q5 6 2 21 QLPMOD 0.5 temp=27
+Q6 13 2 21 QLPMOD 0.1 temp=27
+Q7 9 2 21 QLPMOD 0.7 temp=27
+
+*Stage 1: Input
+Q10 10 8 6 QLPMOD 0.9 temp=27
+Q11 11 7 6 QLPMOD 0.9 temp=27
+Q12 25 22 8 SPMOD 0.41 temp=27
+Q13 25 23 7 SPMOD 0.39 temp=27
+
+*Stage 2: Mirror
+Q14 10 10 25 QNMOD 0.9 temp=27
+Q15 11 10 25 QNMOD 0.9 temp=27
+
+*Stage 3: Amplifier
+Q16 9 11 25 QNMOD 0.4 temp=27
+
+*Stage 4: Output
+Q17 24 9 25 QNMOD 16.8 temp=27
+
+*end of the subcircuit 
+.ends
+
+*Library
+*npn prerad off ctp 3b
+.model QNMOD NPN (              
++ IS = 1.68208E-16
++ BF = 84.058    NF = 0.986787 VAF = 351.9861415
++ IKF = 9.86E-3  NK = 0.47574  ISE = 7.1029E-15
++ NE = 2.06453   BR = 0.697    NR = 2
++ VAR = 100      IKR = 0.1     ISC = 1E-17
++ NC = 2         RB = 140.86   IRB = 1E-3
++ RBM = 50       RE = 2        RC = 250.75)
+
+*lpnp prerad off ctp 3b
+.model QLPMOD PNP (             
++ IS = 8.70964E-16
++ BF = 786.9		NF = 0.99                           VAF = 36.3423711
++ IKF = 6.30957E-5       NK = 0.52                           ISE = 9.54993E-17
++ NE = 1.27089           BR = 0.697                          NR = 2
++ VAR = 100              IKR = 0.1                           ISC = 1E-17
++ NC = 2                 RB = 758.578                        IRB = 3.6E-5
++ RBM = 100              RE = 4.096                           RC = 1) 
+
+* Substrate PNP
+.model SPMOD PNP(
++ IS=1.55E-15
++ BF=1000
++ NF=0.99
++ VAF=36.3423711
++ IKF=7E-5
++ NK=0.52
++ ISE=0.01E-15 
++ NE=1.22
++ BR=0.697
++ NR=2
++ VAR=100
++ IKR=0.1
++ ISC=1E-17
++ NC=2
++ RB=4000 
++ IRB=3.6E-5
++ RBM=100
++ RE=4
++ RC=1)
+
+
+.model DMOD D (IS = 4E-10
++ RS = .105
++ N = 1.48
++ TT = 8E-7
++ CJO = 1.95E-11
++ VJ = .4
++ M = .38
++ EG = 1.36
++ XTI = -8
++ KF = 0
++ AF = 1
++ FC = .9
++ BV = 600
++ IBV = 1E-4)
+
+.model DMODPNP D (IS = {PNP_IS}
++ N = {PNP_N})
+
+.model DMODNPN D (IS = {NPN_IS}
++ N = {NPN_N})
+
+.model DMODSPMOD D (IS = {PNP_IS}
++ N = {PNP_N})
+
+*end of the list
+.end
