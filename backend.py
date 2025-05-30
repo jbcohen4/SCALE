@@ -118,7 +118,7 @@ def get_pre_rad_xyce_output_txt(netlist_template:str, vos:float = 0.0) -> List[T
         # print(return_code)
         # print(stdout)
         out_text = read_file_as_string(temp_xyce_output_filename)
-        # print(out_text)
+        print(out_text)
         assert len(out_text) > 0
         return (out_text)
     finally:
@@ -161,7 +161,7 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
             out_text = read_file_as_string(temp_xyce_output_filename)
-            # print(out_text)
+            print(out_text)
             assert len(out_text) > 0
             return (avg_fluences, out_text)
         finally:
@@ -974,7 +974,7 @@ def generate_data_for_LM117(VCC, VEE, fluence_min, fluence_max, specification: s
     all_xyce_output = get_all_xyce_output_txt(post_rad_full_netlist)
 
     xyce_output = [(fluence, out_txt) for (fluence, out_txt) in all_xyce_output if fluence_min <= fluence <= fluence_max]
-    fluences, v_ref ,i_adj  = [], [], []
+    fluences, v_ref ,i_adj, v_out  = [], [], [], []
 
     # process for pre_rad
     pre_rad_parsed_output = parse_output_data_dynamic(xyce_output_pre_rad)    
@@ -985,6 +985,7 @@ def generate_data_for_LM117(VCC, VEE, fluence_min, fluence_max, specification: s
             fluences.append(set_fluence)
             v_ref.append(diff_v2v3) # volts to v
             i_adj.append(diff_ir2ir1 * 10 ** 6) # amps to μA
+            v_out.append(v_2)
             break
 
     # process for post_rad
@@ -998,12 +999,15 @@ def generate_data_for_LM117(VCC, VEE, fluence_min, fluence_max, specification: s
                 fluences.append(fluence)
                 v_ref.append(diff_v2v3) # volts to V
                 i_adj.append(diff_ir2ir1 * 10 ** 6) # amps to μA
+                v_out.append(v_2)
                 break
     
     if specification == "V_ref":
         return {'Fluence (n/cm^2)': fluences, 'Reference voltage (V)': v_ref}
     elif specification == "I_adj":
         return {'Fluence (n/cm^2)': fluences, 'Adj. pin current (μA)': i_adj}
+    elif specification == "V_out":
+        return {'Fluence (n/cm^2)': fluences, 'Output voltage (V)': v_out}
 
 def generate_data_for_OP27(VCC, VEE, fluence_min, fluence_max, specification: str):
     print("Processing OP27")
@@ -1079,7 +1083,7 @@ def generate_data(Selected_Part, Selected_Specification, VCC, VEE, Temperature, 
         elif Selected_Specification in ["V_os", "I_ib", "I_os"]:
              return generate_data_for_LM139_VOS(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM117":
-        if Selected_Specification in ["V_ref", "I_adj"]:
+        if Selected_Specification in ["V_ref", "I_adj", "V_out"]:
             return generate_data_for_LM117(VCC=VCC, VEE=VEE, fluence_min=Fluence_Min, fluence_max=Fluence_Max, specification=Selected_Specification)
     elif Selected_Part == "LM741_Test":
         if Selected_Specification in ["V_os", "I_ib", "I_os"]:

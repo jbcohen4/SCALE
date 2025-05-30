@@ -34,8 +34,8 @@ LM111_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM111_Vos_Ii
 
 # paths for LM193
 # V0 are the old subckts shared by Triet, V1 are given by Ethan 
-LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Prerad_V0.cir")
-LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad_V0.cir")
+LM193_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Prerad_V2.cir")
+LM193_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM193_subckt_Postrad_V2.cir")
 LM193_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_OutputCurrents_testbench_V0.cir")
 LM193_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Iib_Ios_testbench_V0.cir")
 
@@ -73,7 +73,7 @@ DROPDOWN_MAPPING = {
     "LM111" : ["V_os", "I_ib", "I_os"],
     "LM117" : ["V_ref", "I_adj", "V_out"],
     "LM741_Test": ["V_os", "I_ib", "I_os"],
-    "OP27" : ["V_os", "I_ib", "I_os"]
+    # "OP27" : ["V_os", "I_ib", "I_os"]
 }
 
 # object to store values of the specifications for dotter plot
