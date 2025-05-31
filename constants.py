@@ -41,8 +41,8 @@ LM193_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM193_Vos_Ii
 
 # paths for LM139
 # V0 is subckt shared by Ethan and V1 is the one shared by Triet - which is similar to 193
-LM139_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Prerad_V1.cir")
-LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Postrad_V1.cir")
+LM139_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Prerad_V2.cir")
+LM139_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM139_subckt_Postrad_V2.cir")
 LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_OutputCurrents_testbench_V0.cir")
 LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V1.cir")
 

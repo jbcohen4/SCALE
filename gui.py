@@ -70,13 +70,13 @@ button_frame = tk.Frame(root, bg=BG_COLOR, height=50)
 button_frame.grid(row=2, column=0, columnspan=total_columns, sticky="ew")
 
 # Navigation buttons
-fluence_button = tk.Button(button_frame, text="Fluence", command=lambda: show_frame(fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
+fluence_button = tk.Button(button_frame, text="NEUTRON ENV", command=lambda: show_frame(fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
 fluence_button.pack(side="left", padx=20, pady=5)
 
-tid_button = tk.Button(button_frame, text="TID", command=lambda: show_frame(tid_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
+tid_button = tk.Button(button_frame, text="TID ENV", command=lambda: show_frame(tid_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
 tid_button.pack(side="left", padx=20, pady=5)
 
-tid_fluence_button = tk.Button(button_frame, text="ION_Fluence", command=lambda: show_frame(tid_fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
+tid_fluence_button = tk.Button(button_frame, text="COMBINED ENV", command=lambda: show_frame(tid_fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
 tid_fluence_button.pack(side="left", padx=20, pady=5)
 
 # Function to switch between frames using grid
@@ -339,7 +339,7 @@ def create_fluence_gui():
         fluence_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
@@ -423,11 +423,11 @@ def create_fluence_gui():
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -458,7 +458,7 @@ def create_fluence_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
@@ -474,7 +474,7 @@ def create_fluence_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "Neutron testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     label_neutron_type = tk.Label(frame3, text="Neutron Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_neutron_type.grid(row=0, column=0, sticky="e")
 
@@ -826,7 +826,7 @@ def create_tid_gui():
         tid_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
@@ -910,11 +910,11 @@ def create_tid_gui():
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -945,7 +945,7 @@ def create_tid_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
@@ -961,7 +961,7 @@ def create_tid_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "TID testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "TID testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
     label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
@@ -1320,7 +1320,7 @@ def create_ion_fluence_gui():
         tid_fluence_frame.grid_columnconfigure(col, weight=1)
 
     # Frame 1
-    frame1 = create_frame(2, 0, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_Parts.grid(row=0, column=0, sticky="e")
 
@@ -1404,11 +1404,11 @@ def create_ion_fluence_gui():
     progress_label.grid_remove()
 
     # Frame 2
-    frame2 = create_frame(2, 2, "", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     # label_dataset.grid(row=0, column=0, sticky="we")
 
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vcc.grid(row=0, column=0, sticky="e")
 
     #set default VCC & VEE based on spec
@@ -1439,7 +1439,7 @@ def create_ion_fluence_gui():
     spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
     spinbox_vcc.grid(row=0, column=1, sticky="w")
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0, step-1):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_dataset_vee.grid(row=1, column=0,sticky="e")
 
     spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
@@ -1455,7 +1455,7 @@ def create_ion_fluence_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "ION testing conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "ION testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
     label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
