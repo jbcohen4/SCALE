@@ -69,23 +69,51 @@ root.grid_rowconfigure(1, minsize=5)
 button_frame = tk.Frame(root, bg=BG_COLOR, height=50)
 button_frame.grid(row=2, column=0, columnspan=total_columns, sticky="ew")
 
-# Navigation buttons
-fluence_button = tk.Button(button_frame, text="NEUTRON ENV", command=lambda: show_frame(fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
-fluence_button.pack(side="left", padx=20, pady=5)
+# --- Navigation buttons with highlight logic ---
+nav_buttons = {}
 
-tid_button = tk.Button(button_frame, text="TID ENV", command=lambda: show_frame(tid_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
-tid_button.pack(side="left", padx=20, pady=5)
+def set_active_button(active_key):
+    for key, btn in nav_buttons.items():
+        if key == active_key:
+            btn.config(bg="green", fg="white")
+        else:
+            btn.config(bg="brown4", fg="white")
 
-tid_fluence_button = tk.Button(button_frame, text="COMBINED ENV", command=lambda: show_frame(tid_fluence_frame), width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid")
-tid_fluence_button.pack(side="left", padx=20, pady=5)
-
-# Function to switch between frames using grid
 def show_frame(frame):
     # Hide all frames by removing them from the grid
     for f in frames:
         f.grid_remove()
     # Show the selected frame using grid (place in row 3)
     frame.grid(row=3, column=0, columnspan=total_columns, sticky="nsew")
+    # Highlight the correct button
+    if frame == fluence_frame:
+        set_active_button("neutron")
+    elif frame == tid_frame:
+        set_active_button("tid")
+    elif frame == tid_fluence_frame:
+        set_active_button("combined")
+
+# Navigation buttons
+nav_buttons["neutron"] = tk.Button(
+    button_frame, text="NEUTRON ENV",
+    command=lambda: show_frame(fluence_frame),
+    width=15, height=2, bg="green", fg="white", bd=0, relief="solid"
+)
+nav_buttons["neutron"].pack(side="left", padx=20, pady=5)
+
+nav_buttons["tid"] = tk.Button(
+    button_frame, text="TID ENV",
+    command=lambda: show_frame(tid_frame),
+    width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid"
+)
+nav_buttons["tid"].pack(side="left", padx=20, pady=5)
+
+nav_buttons["combined"] = tk.Button(
+    button_frame, text="COMBINED ENV",
+    command=lambda: show_frame(tid_fluence_frame),
+    width=15, height=2, bg="brown4", fg="white", bd=0, relief="solid"
+)
+nav_buttons["combined"].pack(side="left", padx=20, pady=5)
 
 # Container for holding all the frames
 frames = []
