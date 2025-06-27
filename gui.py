@@ -45,23 +45,34 @@ HEADER_COLOR = 'white'
 header_frame = tk.Frame(root, bg=BG_COLOR, height=100)
 header_frame.grid(row=0, column=0, columnspan=total_columns, sticky="ew")
 
-# ASU logo
+# Grid for precise placement
+header_frame.grid_columnconfigure(0, weight=1)
+header_frame.grid_columnconfigure(1, weight=2)
+header_frame.grid_columnconfigure(2, weight=1)
+
+# ASU logo (left)
 asu_logo = Image.open(exe_tools.adjust_path('images/ASU_logo.png'))
 asu_logo_resized = asu_logo.resize((220, 130), Image.LANCZOS)
 asu_logo_tk = ImageTk.PhotoImage(asu_logo_resized)
-
 canvas_asu = tk.Canvas(header_frame, width=asu_logo_tk.width(), height=asu_logo_tk.height(), bg=BG_COLOR, bd=0, highlightthickness=0)
 canvas_asu.create_image(0, 0, anchor="nw", image=asu_logo_tk)
-canvas_asu.pack(side="left", anchor="w", padx=10, pady=2)  # Padding on left side
+canvas_asu.grid(row=0, column=0, padx=10, pady=2, sticky="w")
 
-# Sandia logo
+# IMPACT logo (center)
+impact_logo = Image.open(exe_tools.adjust_path('images/IMPACT_Logo.png'))
+impact_logo_resized = impact_logo.resize((700, 110), Image.LANCZOS)
+impact_logo_tk = ImageTk.PhotoImage(impact_logo_resized)
+canvas_impact = tk.Canvas(header_frame, width=impact_logo_tk.width(), height=impact_logo_tk.height(), bg=BG_COLOR, bd=0, highlightthickness=0)
+canvas_impact.create_image(0, 0, anchor="nw", image=impact_logo_tk)
+canvas_impact.grid(row=0, column=1, padx=10, pady=2)
+
+# Sandia logo (right)
 sandia_logo = Image.open(exe_tools.adjust_path('images/sandia_logo_black.png'))
 sandia_logo_resized = sandia_logo.resize((130, 110), Image.LANCZOS)
 sandia_logo_tk = ImageTk.PhotoImage(sandia_logo_resized)
-
 canvas_sandia = tk.Canvas(header_frame, width=sandia_logo_tk.width(), height=sandia_logo_tk.height(), bg=BG_COLOR, bd=0, highlightthickness=0)
 canvas_sandia.create_image(0, 0, anchor="nw", image=sandia_logo_tk)
-canvas_sandia.pack(side="right", anchor="e", padx=30, pady=2)  # Padding on right side
+canvas_sandia.grid(row=0, column=2, padx=30, pady=2, sticky="e")
 
 root.grid_rowconfigure(1, minsize=5) 
 
@@ -502,7 +513,7 @@ def create_fluence_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "Neutron testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "Neutron Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     label_neutron_type = tk.Label(frame3, text="Neutron Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
     label_neutron_type.grid(row=0, column=0, sticky="e")
 
@@ -605,6 +616,38 @@ def create_tid_gui():
     global fig, ax, canvas, current_y_scale, message_widget, plot_data
     current_y_scale = 'linear'
     plot_data = pd.DataFrame()
+    
+    # overlay functionalities
+    global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2
+    prev_data = None
+    overlay_mode = False
+    prev_part = None
+    prev_spec = None
+    prev_dr = None
+    prev_h2 = None
+
+    def reset_overlay(*args):
+        global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2
+        prev_data = None
+        overlay_mode = False
+        prev_part = var1.get()
+        prev_spec = var2.get()
+        prev_dr = var_dr.get()
+        prev_h2 = var_h2.get()
+
+    def overlay_plot():
+        global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2
+        if not plot_data.empty:
+            prev_data = plot_data.copy()
+            overlay_mode = True
+            prev_part = var1.get()
+            prev_spec = var2.get()
+            prev_dr = var_dr.get()
+            prev_h2 = var_h2.get()
+
+            log_message("Overlay mode enabled. Run Execute to plot overlay.")
+        else:
+            log_message("No data to overlay.")
     
     # Custom style for the progress bar
     style = ttk.Style()
@@ -734,7 +777,7 @@ def create_tid_gui():
 
     # Function to draw the graph with new data
     def draw_graph(data, Selected_Part, Selected_Specification):
-        global plot_data,fig, ax, canvas, current_y_scale
+        global plot_data,fig, ax, canvas, current_y_scale, prev_data, overlay_mode, prev_part, prev_spec
         
         # Create new graph frame
         graph_frame = setup_graph()
@@ -755,7 +798,39 @@ def create_tid_gui():
         log_message("Plot Data:")
         log_message(plot_data.to_string())
 
-        ax.plot(xs, ys, color = "maroon")
+        # Overlay logic
+        if overlay_mode and prev_data is not None and prev_part == Selected_Part and prev_spec == Selected_Specification:
+            prev_xs = prev_data.iloc[:, 0].values
+            prev_ys = prev_data.iloc[:, 1].values
+
+            # Get previous and current dropdown values for labels
+            prev_label = f"Prev: DR={prev_dr}, H2={prev_h2}"
+            curr_label = f"Current: DR={var_dr.get()}, H2={var_h2.get()}"
+            
+            # Take min of x and max of y for axis limits
+            min_x = max(np.min(xs), np.min(prev_xs))
+            max_x = min(np.max(xs), np.max(prev_xs))
+            min_y = min(np.min(ys), np.min(prev_ys))
+            max_y = max(np.max(ys), np.max(prev_ys))
+
+            # Add Padding to the axes limits
+            x_pad = 0.02 * (max_x - min_x) if max_x > min_x else 1
+            y_pad = 0.05 * (max_y - min_y) if max_y > min_y else 1
+
+            ax.plot(prev_xs, prev_ys, color="blue", label= prev_label)
+            ax.plot(xs, ys, color="maroon", label= curr_label)
+
+            ax.set_xlim([min_x - x_pad, max_x + x_pad])
+            ax.set_ylim([min_y - y_pad, max_y + y_pad])
+
+            ax.legend()
+            overlay_mode = False
+            prev_data = None
+            log_message("Overlay complete. Back to normal mode.")
+        else:
+            curr_label = f"Current: DR={var_dr.get()}, H2={var_h2.get()}"
+            ax.plot(xs, ys, color="maroon", label=curr_label)
+            ax.legend().remove() if ax.get_legend() else None
 
         if Selected_Part in DOTTER_SPECIFICATIONS:
             if Selected_Specification in DOTTER_SPECIFICATIONS[Selected_Part]:
@@ -927,6 +1002,10 @@ def create_tid_gui():
     # Trace changes in Dropdown 2 and update the label accordingly
     var2.trace_add('write', update_specification_label)
 
+    # Reset overlay if part or spec changes
+    var1.trace_add('write', reset_overlay)
+    var2.trace_add('write', reset_overlay)
+
     # Progress Bar
     progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
     progress_bar.grid(row=2, column=1, padx=2, pady=2)
@@ -989,7 +1068,7 @@ def create_tid_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "TID testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "TID Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
     label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
@@ -1113,8 +1192,11 @@ def create_tid_gui():
     save_button = tk.Button(frame4, text="Save to csv", command=save_plot_data, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
     save_button.grid(row=2, column=1, padx=10, pady=5)
 
+    overlay_button = tk.Button(frame4, text="Overlay Plot", command=overlay_plot, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
+    overlay_button.grid(row=3, column=1, padx=10, pady=5)
+
     clear_button = tk.Button(frame4, text="Clear input", command=clear_function, width=button_width, height=button_height, bg=button_bg_color, fg=button_fg_color, bd=0, relief="solid")
-    clear_button.grid(row=3, column=1, padx=10, pady=5)
+    clear_button.grid(row=4, column=1, padx=10, pady=5)
 
 # TID_Fluence Frame
 def create_ion_fluence_gui():
@@ -1483,7 +1565,7 @@ def create_ion_fluence_gui():
     label_temp_temp.grid(row=2, column=2, sticky="e")
 
     # Frame 3
-    frame3 = create_frame(2, 4, "ION testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
+    frame3 = create_frame(2, 4, "ION Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
 
     # Dose Rate Label and DropDown
     label_dr_type = tk.Label(frame3, text="Dose Rate (rad/S):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)

@@ -1,0 +1,148 @@
+*Subcircuit name: LM117 VIN VOUT VADJ
+**************************
+.subckt LM117 1 17 20
+
+*Current source: I<name> <+ node> <- node> [[DC] <value>]
+IS1 1 57 10uA
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+
+Q2         2 2 3 LPNP_compact 1.5 temp=25
+Q3         2 4 6 NPN_compact 7.2 temp=25
+Q4         4 2 34 LPNP_compact 1.4 temp=25
+Q5         5 4 17 NPN_compact 1.7 temp=25
+
+Q6         17 5 8 SPMOD 0.98 temp=25
+Q7         7 5 10 NPN_compact 16.6 temp=25
+Q8         8 2 35 LPNP_compact 1.5 temp=25
+Q9         9 7 8 LPNP_compact 1.5 temp=25
+Q10	   11 2 36 LPNP_compact 3.4 temp=25
+
+Q11	   11 9 12 NPN_compact 3.4 temp=25
+Q12        17 13 11 SPMOD 8.40 temp=25
+Q13        1 14 13 NPN_compact 3.7 temp=25
+Q14        14 2 33 LPNP_compact 1.6 temp=25
+Q15	   17 15 14 SPMOD 2.93 temp=25
+
+Q16	   15 16 11 LPNP_compact 2.3 temp=25
+Q17        15 17 19 NPN_compact 1.4 temp=25
+Q18        16 16 11 LPNP_compact 2.3 temp=25
+Q19        16 17 18 NPN_compact 16.6 temp=25
+Q20        17 21 11 SPMOD 9.82 temp=25
+
+Q21	   21 22 17 NPN_compact 1.7 temp=25
+Q22a	   11 32 1 LPNP_compact 0.78 temp=25
+Q22b	   32 32 1 LPNP_compact 0.78 temp=25
+Q23	   32 11 30 NPN_compact 1.7 temp=25
+Q24a	   23 24 25 NPN_compact 1.2 temp=25
+Q24b	   23 24 26 NPN_compact 23.9 temp=25
+Q25	   1 31 29 NPN_compact 62.6 temp=25
+Q26	   1 29 28 NPN_compact 460 temp=25
+
+
+*Resistance: R<name> <+ node> <- node> [model name] <value>
+R1	   1 3 310 
+R2	   1 34 310
+R3	   1 35 190
+R4	   1 36 82
+R5	   1 33 5.6k
+R6	   4 57 200k
+R7	   4 5 130
+R8	   8 7 12.4k
+R9	   6 17 180
+R10	   10 17 4.1k
+R11	   9 17 5.8k
+R12	   12 17 72
+R13	   13 17 5.1k
+R14	   19 38 12k
+R15	   18 19 2.4k
+R16	   11 21 6.7k
+R17	   11 24 12k
+R18	   30 29 130
+R19	   11 31 370
+R20	   22 23 13k
+R21	   24 23 400
+R22	   29 17 160
+*R23	   1 26 18k
+R24	   26 25 160
+R25	   25 28 3
+R26	   28 17 100m
+R27	   38 20 50
+
+*Capacitance: C<name> <+ node> <- node> [model name] <value> + [IC=<initial value>]
+c1 15 17 30p
+c2 15 38 30p
+c3 21 22 5p
+
+*Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
+**********************************
+
+*end of the subcircuit 
+.ends
+	   
+.model NPN_COMPACT NPN(               
++IS=2.354912E-16
++BF=84.058
++NF=0.986787     
++VAF=351.9861415
++IKF=9.86E-3
++NK=0.47574  
++ISE=7.1029E-15
++NE=2.06453  
++BR=0.697       
++NR=2
++VAR=100
++IKR=0.1         
++ISC=1E-17
++NC=2                          
++RB=140.86       
++IRB=1E-3 
++RBM=50                        
++RE=2           
++RC=250.75)
+
+.model LPNP_compact PNP (
++IS=7.40964E-16
++BF=90.9
++NF=0.99         
++VAF=36.3423711
++IKF=1.30957E-4  
++NK=0.52
++ISE=6E-16
++NE=1.27089 
++BR=0.697 
++NR=2
++VAR=100  
++IKR=0.1 
++ISC=1E-17
++ NC=2    
++RB=758.578   
++IRB=3.6E-5
++ RBM=100    
++RE=4.096  
++RC=1)
+ 
+* Substrate PNP
+.model SPMOD PNP(
++ IS=1.55E-15
++ BF=1000
++ NF=0.99
++ VAF=36.3423711
++ IKF=7E-5
++ NK=0.52
++ ISE=0.01E-15 
++ NE=1.22
++ BR=0.697
++ NR=2
++ VAR=100
++ IKR=0.1
++ ISC=1E-17
++ NC=2
++ RB=4000 
++ IRB=3.6E-5
++ RBM=100
++ RE=4
++ RC=1)
+
+*end of the list
+.end

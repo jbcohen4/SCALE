@@ -160,8 +160,12 @@ def get_all_xyce_output_txt(netlist_template: str, Vos_values: List[float] = Non
             
             cmd_string = f"{XYCE_EXE_PATH} {temp_netlist_filename}"
             stdout, stderr, return_code = run_command(cmd_string)
+            # print(stderr)
+            # print(return_code)
+            # print(stdout)
             out_text = read_file_as_string(temp_xyce_output_filename)
             # print(out_text)
+
             assert len(out_text) > 0
             return (avg_fluences, out_text)
         finally:

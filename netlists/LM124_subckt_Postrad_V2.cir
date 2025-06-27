@@ -1,0 +1,155 @@
+*Subcircuit VCC VEE VIN+ VIN- VOUT
+**********************************
+.subckt LM124_sc 18 8 1 2 15
+
+*Diode: D<name> <anode node (+)> <cathode node (-)> <model name> [area value]
+*****************************************************************************
+
+*Current source: I<name> <+ node> <- node> [[DC] <value>]
+IS1 19 8 50uA
+
+*PNP
+D2         14 7  DMODSPMOD 2.12
+D5         10 6  DMODSPMOD 0.82
+D7         11 13  DMODSPMOD 0.91
+D11        15 9  DMODSPMOD 8.51
+D15a       18 19  DMODPNP 0.87
+D15b       18 19  DMODPNP 3.22
+D16a       18 19  DMODPNP 0.29
+D16b       18 19  DMODPNP 0.29
+D17        4 2  DMODSPMOD 0.95
+D18        5 4  DMODPNP 0.95
+D19a       18 19  DMODPNP 0.20
+D19b       18 19  DMODPNP 0.20
+D19c       18 19  DMODPNP 0.20
+D19d       18 19  DMODPNP 0.20
+D19e       18 19  DMODPNP 0.20
+D20        5 3  DMODPNP 0.99
+D21        3 1  DMODSPMOD 0.95
+
+*NPN
+D3         7 8  DMODNPN 0.48
+D4         7 8  DMODNPN 0.48
+D6         10 12  DMODNPN 0.44
+D8         13 8  DMODNPN 0.54
+D9         12 8  DMODNPN 3.06
+D10        13 8  DMODNPN 1.89
+D12        16 15  DMODNPN 1.44
+D13        17 16  DMODNPN 13.23
+D14        9 17  DMODNPN 1.20
+
+*BJT: Q<name> <collector> <base> <emitter> [substrate] <model name> [area value]
+Q2         8 7 14 SPMOD 2.32
+Q3         7 7 8 NPN_compact 0.48
+Q4         6 7 8 NPN_compact 0.48
+Q5         8 6 10 SPMOD 0.35
+Q6         11 10 12 NPN_compact 0.44
+Q7         8 13 11 SPMOD 0.43
+Q8         13 13 8 NPN_compact 0.54
+Q9         9 12 8 NPN_compact 3.06
+Q10        15 13 8 NPN_compact 1.89
+Q11        8 9 15 SPMOD 13.07
+Q12        9 16 15 NPN_compact 1.44
+Q13        18 17 16 NPN_compact 13.23
+Q14        18 9 17 NPN_compact 1.20
+Q15a       19 19 18 LPNP_compact 0.87
+Q15b       9 19 18 LPNP_compact 3.22
+Q16a       13 19 18 LPNP_compact 0.29
+
+Q16b       11 19 18 LPNP_compact 0.29
+Q17        8 2 4 SPMOD 0.47
+Q18        7 4 5 LPNP_compact 0.95
+Q19a       5 19 18 LPNP_compact 0.20
+Q19b       3 19 18 LPNP_compact 0.20
+Q19c       4 19 18 LPNP_compact 0.20
+Q19d       14 19 18 LPNP_compact 0.20
+Q19e       10 19 18 LPNP_compact 0.20
+Q20        6 3 5 LPNP_compact 0.99
+Q21        8 1 3 SPMOD 0.47
+
+*Resistance: R<name> <+ node> <- node> [model name] <value>
+R1          17 16 40K
+R2          16 15 25
+
+*Capacitance: C<name> <+ node> <- node> [model name] <value> + [IC=<initial value>]
+C1 9 6 18p
+
+.ends LM124_sc
+
+.model NPN_COMPACT NPN(               
++IS=2.354912E-16
++BF=84.058
++NF=0.986787     
++VAF=351.9861415
++IKF=9.86E-3
++NK=0.47574  
++ISE=7.1029E-15
++NE=2.06453  
++BR=0.697       
++NR=2
++VAR=100
++IKR=0.1         
++ISC=1E-17
++NC=2                          
++RB=140.86       
++IRB=1E-3 
++RBM=50                        
++RE=2           
++RC=250.75)
+
+.model LPNP_compact PNP (
++IS=7.40964E-16
++BF=90.9
++NF=0.99         
++VAF=36.3423711
++IKF=1.30957E-4  
++NK=0.52
++ISE=6E-16
++NE=1.27089 
++BR=0.697 
++NR=2
++VAR=100  
++IKR=0.1 
++ISC=1E-17
++ NC=2    
++RB=758.578   
++IRB=3.6E-5
++ RBM=100    
++RE=4.096  
++RC=1)
+ 
+* Substrate PNP
+.model SPMOD PNP(
++ IS=1.55E-15
++ BF=1000
++ NF=0.99
++ VAF=36.3423711
++ IKF=7E-5
++ NK=0.52
++ ISE=0.01E-15 
++ NE=1.22
++ BR=0.697
++ NR=2
++ VAR=100
++ IKR=0.1
++ ISC=1E-17
++ NC=2
++ RB=4000 
++ IRB=3.6E-5
++ RBM=100
++ RE=4
++ RC=1)
+
+
+
+.model DMODPNP D (IS = {PNP_IS}
++ N = {PNP_N})
+
+.model DMODNPN D (IS = {NPN_IS}
++ N = {NPN_N})
+
+.model DMODSPMOD D (IS = {PNP_IS}
++ N = {PNP_N})
+
+*end of the list
+.end

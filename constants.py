@@ -23,7 +23,7 @@ LM741_TEMP_IOS_TESTBENCH = exe_tools.read_txt_file("testbenches/LM741_temp_Ios_t
 
 #paths for the LM124
 LM124_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Prerad_V1.cir")
-LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad_V1.cir")
+LM124_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM124_subckt_Postrad_V2.cir")
 LM124_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM124_Vos_Iib_Ios_testbench.cir")
 
 # paths for LM111
@@ -47,8 +47,8 @@ LM139_OUTPUT_CURRENT_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/L
 LM139_VOS_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM139_Vos_Iib_Ios_testbench_V1.cir")
 
 # paths for LM117
-LM117_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Prerad.cir")
-LM117_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Postrad.cir")
+LM117_SUBCKT_PRE_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Prerad_V1.cir")
+LM117_SUBCKT_POST_RAD_TEMPLATE = exe_tools.read_txt_file("netlists/LM117_subckt_Postrad_V1.cir")
 LM117_VREF_TESTBENCH_TEMPLATE = exe_tools.read_txt_file("testbenches/LM117_Vref_Iadj_testbench.cir")
 
 # Paths for OP27
@@ -71,8 +71,8 @@ DROPDOWN_MAPPING = {
     "LM139" : ["I_ol","I_oh","V_os", "I_ib", "I_os"],
     # "LM111" : ["I_ol","I_oh","V_os", "I_ib", "I_os"]
     "LM111" : ["V_os", "I_ib", "I_os"],
-    "LM117" : ["V_ref", "I_adj", "V_out"],
-    "LM741_Test": ["V_os", "I_ib", "I_os"],
+    "LM117" : ["V_ref", "I_adj", "V_out"]
+    # "LM741_Test": ["V_os", "I_ib", "I_os"],
     # "OP27" : ["V_os", "I_ib", "I_os"]
 }
 
