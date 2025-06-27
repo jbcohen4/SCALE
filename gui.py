@@ -636,14 +636,14 @@ def create_tid_gui():
         prev_h2 = var_h2.get()
 
     def overlay_plot():
-        global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2
+        global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2, temp_prev_dr, temp_prev_h2
         if not plot_data.empty:
             prev_data = plot_data.copy()
             overlay_mode = True
             prev_part = var1.get()
             prev_spec = var2.get()
-            prev_dr = var_dr.get()
-            prev_h2 = var_h2.get()
+            prev_dr = temp_prev_dr
+            prev_h2 = temp_prev_h2
 
             log_message("Overlay mode enabled. Run Execute to plot overlay.")
         else:
@@ -723,6 +723,7 @@ def create_tid_gui():
 
     # Function to get data from backend in a separate thread
     def generate_data_thread():
+        global temp_prev_dr, temp_prev_h2
         # show the progress bar
         progress_bar.grid()  
         progress_bar.start(10)  
@@ -737,6 +738,9 @@ def create_tid_gui():
             Temperature = spinbox_temp.get() # at the moment, the backend can't use this
             tid_min = total_dose_min_var.get()
             tid_max = total_dose_max_var.get()
+            # for overlay plot
+            temp_prev_dr = var_dr.get()
+            temp_prev_h2 = var_h2.get()
             
             # validate data and put in default values as needed
             if Selected_Part in ("AD590", "LM193", "LM139"):
@@ -904,20 +908,8 @@ def create_tid_gui():
         spinbox_temp.delete(0, tk.END) 
         print("Clear all the fields")
 
-    # Clear function 
-    def clear_function():
-        # Clear spinbox entries
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vcc.insert(0, 5) 
-
-        spinbox_vee.delete(0, tk.END)
-        spinbox_vee.insert(0, 'NA')  
-
-        spinbox_temp.delete(0, tk.END) 
-        print("Clear all the fields")
-
         # Find and destroy the existing graph frame and its children
-        for widget in fluence_frame.winfo_children():
+        for widget in tid_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
                 # Destroy all children of the graph frame
                 for child in widget.winfo_children():
@@ -1418,7 +1410,7 @@ def create_ion_fluence_gui():
         print("Clear all the fields")
 
     # Find and destroy the existing graph frame and its children
-        for widget in fluence_frame.winfo_children():
+        for widget in tid_fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
                 # Destroy all children of the graph frame
                 for child in widget.winfo_children():
