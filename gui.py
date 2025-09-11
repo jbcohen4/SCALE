@@ -76,6 +76,9 @@ canvas_sandia.grid(row=0, column=2, padx=30, pady=2, sticky="e")
 
 root.grid_rowconfigure(1, minsize=5) 
 
+# Version label just below the logo/header
+tk.Label(root, text="Version 1.10", fg="black", bg="white", font=("Arial", 10, "bold")).grid(row=1, column=0, columnspan=total_columns, sticky="ne", pady=(0, 2), padx=(0, 20))
+
 # New row for the navigation buttons (row 1)
 button_frame = tk.Frame(root, bg=BG_COLOR, height=50)
 button_frame.grid(row=2, column=0, columnspan=total_columns, sticky="ew")
@@ -218,20 +221,28 @@ def create_fluence_gui():
         # Show the progress bar
         progress_bar.grid()
         progress_bar.start(10)
-        progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="e")
+        progress_label.grid(row=4, column=1, padx=2, pady=2, sticky="e")
 
         try:
             # Get data from user inputs
             Selected_Part = var1.get()
             Selected_Specification = var2.get()
-            VCC = spinbox_vcc.get()
-            VEE = spinbox_vee.get()
-            Temperature = spinbox_temp.get()
+            
+             # Use correct spinbox based on type
+            selected_type = var_type.get()
+            if selected_type in ("Temp_Sensor", "Voltage_Reg"):
+                VCC = frame2.spinbox_vin.get() if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin else None
+                VEE = -float(VCC)
+            else:
+                VCC = frame2.spinbox_vcc.get() if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc else None
+                VEE = frame2.spinbox_vee.get() if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee else None
+
+            Temperature = frame2.spinbox_temp.get() if hasattr(frame2, 'spinbox_temp') else None    
             Fluence_Min = fluence_mapping[fluence_min_var.get()]
             Fluence_Max = fluence_mapping[fluence_max_var.get()]
 
             # Validate inputs and assign defaults
-            if Selected_Part in ("AD590", "LM193", "LM139"):
+            if Selected_Part in ("LM193", "LM139"):
                 VCC = 5.0 if VCC == "" else float(VCC)
                 VEE = None if VEE == "NA" else float(VEE)
             else:
@@ -355,23 +366,26 @@ def create_fluence_gui():
 
     # Clear function 
     def clear_function():
-        # Clear spinbox entries
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vcc.insert(0, 5) 
-
-        spinbox_vee.delete(0, tk.END)
-        spinbox_vee.insert(0, 'NA')  
-
-        spinbox_temp.delete(0, tk.END) 
+        # Clear spinbox entries if they exist
+        if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+            frame2.spinbox_vcc.delete(0, tk.END)
+            frame2.spinbox_vcc.insert(0, 5)
+        if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+            frame2.spinbox_vee.delete(0, tk.END)
+            frame2.spinbox_vee.insert(0, 'NA')
+        if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+            frame2.spinbox_vin.delete(0, tk.END)
+            frame2.spinbox_vin.insert(0, 10)
+        if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+            frame2.spinbox_temp.delete(0, tk.END)
+            frame2.spinbox_temp.insert(0, 25)
         print("Clear all the fields")
 
         # Find and destroy the existing graph frame and its children
         for widget in fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
-                # Destroy all children of the graph frame
                 for child in widget.winfo_children():
                     child.destroy()
-                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -379,15 +393,24 @@ def create_fluence_gui():
 
     # Frame 1
     frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Parts.grid(row=0, column=0, sticky="e")
+    # Dropdown for Type and Parts
+    label_Type = tk.Label(frame1, text="Part Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Type.grid(row=0, column=0, sticky="e")
+    options_type = list(TYPE_MAP.keys())
+    var_type = StringVar()
+    var_type.set(options_type[0])
+    dropdown_type = OptionMenu(frame1, var_type, *options_type)
+    dropdown_type.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_type.config(bg="white")
 
     # Dropdown Parts
-    options_part = list(DROPDOWN_MAPPING.keys())
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Parts.grid(row=1, column=0, sticky="e")
+    options_part = TYPE_MAP[var_type.get()]
     var1 = StringVar()
     var1.set(options_part[0])
     dropdown_part = OptionMenu(frame1, var1, *options_part)
-    dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_part.grid(row=1, column=1, sticky="w", padx=5, pady=5)
     dropdown_part.config(bg="white")
 
     def datasheet_open():
@@ -406,19 +429,28 @@ def create_fluence_gui():
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
     label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Specifications.grid(row=1, column=0, sticky="e")
+    label_Specifications.grid(row=2, column=0, sticky="e")
 
     label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
-    label_Specification_Typical.grid(row=1, column=2, sticky="e")
+    label_Specification_Typical.grid(row=2, column=2, sticky="e")
 
     # Dropdown Specifications
-    selected_part = options_part[0]
-    options_specifications = DROPDOWN_MAPPING[selected_part]
+    options_specifications = DROPDOWN_MAPPING[options_part[0]]
     var2 = StringVar()
     var2.set(options_specifications[0])
     dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
-    dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+    dropdown_specifications.grid(row=2, column=1, sticky="w", padx=5, pady=5)
     dropdown_specifications.config(bg="white")
+
+    # Update Parts when Type changes
+    def update_parts(*args):
+        parts = TYPE_MAP[var_type.get()]
+        dropdown_part['menu'].delete(0, 'end')
+        for part in parts:
+            dropdown_part['menu'].add_command(label=part, command=tk._setit(var1, part))
+        var1.set(parts[0])  # Set default part
+    # Bind the update_parts function to changes in var_type
+    var_type.trace_add('write', update_parts)
 
     # Function to update Specifications Dropdown based on Part Dropdown selection
     def update_dropdown_specifications(*args):
@@ -453,64 +485,127 @@ def create_fluence_gui():
 
     # Progress Bar
     progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
-    progress_bar.grid(row=2, column=1, padx=2, pady=2)
+    progress_bar.grid(row=3, column=1, padx=2, pady=2)
     progress_bar.grid_remove()
 
     # Progress bar label 
     progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
-    progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
+    progress_label.grid(row=4, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
     frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    # label_dataset.grid(row=0, column=0, sticky="we")
-
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vcc.grid(row=0, column=0, sticky="e")
-
-    #set default VCC & VEE based on spec
+    
     def update_default_voltage(*args):
-        # Clear the current values of all spinboxes
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vee.delete(0, tk.END)
-        spinbox_temp.delete(0, tk.END)
+    # Use try/except in case a spinbox doesn't exist for this type
+        try:
+            if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                frame2.spinbox_vcc.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                frame2.spinbox_vee.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.delete(0, tk.END)
 
-        # Determine if the selected part requires VEE to be 'NA' or a numeric value
-        if var1.get() in ('AD590', 'LM193', 'LM139'):
-            default_voltage = 5
-            spinbox_vee.insert(0, 'NA')  # Set VEE to 'NA'
-            spinbox_vee.config(state='disabled')  # Disable VEE spinbox
-        else:
-            default_voltage = 15
-            spinbox_vee.config(state='normal')  # Enable VEE spinbox
-            spinbox_vee.delete(0, tk.END)
-            spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
+            # Set defaults based on part
+            if var1.get() in ('LM193', 'LM139'):
+                default_voltage = 5
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.insert(0, 'NA')
+                    frame2.spinbox_vee.config(state='disabled')
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
+            else:
+                default_voltage = 15
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.config(state='normal')
+                    frame2.spinbox_vee.delete(0, tk.END)
+                    frame2.spinbox_vee.insert(0, -default_voltage)
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
 
-        # Set VCC, temperature, and fluence values
-        spinbox_vcc.insert(0, default_voltage)  # Set default VCC
-        spinbox_temp.insert(0, 25)  # Set default temperature
-        
-    # Bind the update_default_voltage function to changes in var1 (the part selection)
-    var1.trace_add('write', update_default_voltage)
+            # Set VIN default if present
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.insert(0, 10)  # or whatever default you want
 
-    spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
-    spinbox_vcc.grid(row=0, column=1, sticky="w")
+            # Set temperature default if present
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.insert(0, 25)
+        except Exception as e:
+            print("Error setting default voltages:", e)
+    
+    # Store references to dynamic widgets
+    dynamic_bias_widgets = []
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vee.grid(row=1, column=0,sticky="e")
+    def create_bias_controls():
+        # Remove old widgets
+        for widget in dynamic_bias_widgets:
+            widget.destroy()
+        dynamic_bias_widgets.clear()
 
-    spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
-    spinbox_vee.grid(row=1, column=1, sticky="w")
+        selected_type = var_type.get()
+        row = 0
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
-    label_temp.grid(row=2, column=0, sticky="e")
+        if selected_type in ("Op_Amp", "Comparator"):
+            # VCC
+            label_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vcc.grid(row=row, column=0, sticky="e")
+            spinbox_vcc = tk.Spinbox(frame2, from_=0, to=25, increment=1, width=7)
+            spinbox_vcc.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vcc, spinbox_vcc])
+            row += 1
 
-    spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
-    spinbox_temp.grid(row=2, column=1, sticky="w")
+            # VEE
+            label_vee = tk.Label(frame2, text="VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vee.grid(row=row, column=0, sticky="e")
+            spinbox_vee = tk.Spinbox(frame2, from_=-25, to=0, increment=1, width=7)
+            spinbox_vee.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vee, spinbox_vee])
+            row += 1
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
-    label_temp_temp.grid(row=2, column=2, sticky="e")
+            # Store for later access
+            frame2.spinbox_vcc = spinbox_vcc
+            frame2.spinbox_vee = spinbox_vee
+            frame2.spinbox_vin = None
+
+        elif selected_type in ("Temp_Sensor", "Voltage_Reg"):
+            # VIN
+            label_vin = tk.Label(frame2, text="VIN (0~10):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vin.grid(row=row, column=0, sticky="e")
+            spinbox_vin = tk.Spinbox(frame2, from_=0, to=10, increment=0.1, width=7)
+            spinbox_vin.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vin, spinbox_vin])
+
+            # Store for later access
+            frame2.spinbox_vcc = None
+            frame2.spinbox_vee = None
+            frame2.spinbox_vin = spinbox_vin
+
+        # Temperature (always shown)
+        label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
+        label_temp.grid(row=row+1, column=0, sticky="e")
+        spinbox_temp = tk.Spinbox(frame2, values=(25,), width=7, state='readonly')
+        spinbox_temp.grid(row=row+1, column=1, sticky="w")
+        dynamic_bias_widgets.extend([label_temp, spinbox_temp])
+        frame2.spinbox_temp = spinbox_temp
+
+        # Call the function initially to set defaults for the first selected part
+        update_default_voltage()
+    
+    # Call initially
+    create_bias_controls()
+
+    # Re-create controls when type changes
+    def on_type_change(*args):
+        create_bias_controls()
+        # Optionally reset or update other dependent controls here
+
+    # Bind the type dropdown to the on_type_change function
+    var_type.trace_add('write', on_type_change)
+
+    # Bind update_default_voltage to part dropdown changes
+    var1.trace_add('write', lambda *args: update_default_voltage())
 
     # Frame 3
     frame3 = create_frame(2, 4, "Neutron Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
@@ -567,9 +662,6 @@ def create_fluence_gui():
     fluence_min_var.trace_add('write', update_fluence_constraints)
     fluence_max_var.trace_add('write', update_fluence_constraints)
 
-    # Call the function initially to set defaults for the first selected part
-    update_default_voltage()
-
     # Frame 4
     frame4 = create_frame(2, 6,"",width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
     # Button size
@@ -617,7 +709,7 @@ def create_tid_gui():
     current_y_scale = 'linear'
     plot_data = pd.DataFrame()
     
-    # overlay functionalities
+    # overlay functionalities : only for TID
     global prev_data, overlay_mode, prev_part, prev_spec, prev_dr, prev_h2
     prev_data = None
     overlay_mode = False
@@ -666,16 +758,6 @@ def create_tid_gui():
         frame = LabelFrame(tid_frame, text=text, padx=padx, pady=pady, borderwidth=borderwidth, relief="solid", width=width, height=height, bg=bg, highlightbackground=highlightbackground, highlightthickness=highlightthickness)
         frame.grid(row=row, column=column, padx=padx, pady=pady, columnspan=width, rowspan=height, sticky="ewns")
         return frame
-
-    # Validation function to allow only numerical values, not used as of now 
-    def validate_numerical(value):
-        if value == '' or value == "-":
-            return True
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
 
     def log_message(message):
         """Append a message to the message widget."""
@@ -733,17 +815,26 @@ def create_tid_gui():
             # get data from user inputs
             Selected_Part = var1.get()
             Selected_Specification = var2.get()
-            VCC = spinbox_vcc.get()
-            VEE = spinbox_vee.get()
-            Temperature = spinbox_temp.get() # at the moment, the backend can't use this
+            
+            # Use correct spinbox based on type
+            selected_type = var_type.get()
+            if selected_type in ("Temp_Sensor", "Voltage_Reg"):
+                VCC = frame2.spinbox_vin.get() if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin else None
+                VEE = -float(VCC)
+            else:
+                VCC = frame2.spinbox_vcc.get() if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc else None
+                VEE = frame2.spinbox_vee.get() if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee else None
+
+            Temperature = frame2.spinbox_temp.get() if hasattr(frame2, 'spinbox_temp') else None    
             tid_min = total_dose_min_var.get()
             tid_max = total_dose_max_var.get()
+
             # for overlay plot
             temp_prev_dr = var_dr.get()
             temp_prev_h2 = var_h2.get()
             
             # validate data and put in default values as needed
-            if Selected_Part in ("AD590", "LM193", "LM139"):
+            if Selected_Part in ("LM193", "LM139"):
                 VCC = 5.0 if VCC == "" else float(VCC)
                 VEE = None if VEE == "NA" else float(VEE)
             else:
@@ -896,25 +987,27 @@ def create_tid_gui():
         else:
             print('No data to save')
 
-    # Clear function 
     def clear_function():
-        # Clear spinbox entries
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vcc.insert(0, 5) 
-
-        spinbox_vee.delete(0, tk.END)
-        spinbox_vee.insert(0, 'NA')  
-
-        spinbox_temp.delete(0, tk.END) 
+        # Clear spinbox entries if they exist
+        if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+            frame2.spinbox_vcc.delete(0, tk.END)
+            frame2.spinbox_vcc.insert(0, 5)
+        if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+            frame2.spinbox_vee.delete(0, tk.END)
+            frame2.spinbox_vee.insert(0, 'NA')
+        if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+            frame2.spinbox_vin.delete(0, tk.END)
+            frame2.spinbox_vin.insert(0, 10)
+        if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+            frame2.spinbox_temp.delete(0, tk.END)
+            frame2.spinbox_temp.insert(0, 25)
         print("Clear all the fields")
 
         # Find and destroy the existing graph frame and its children
         for widget in tid_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
-                # Destroy all children of the graph frame
                 for child in widget.winfo_children():
                     child.destroy()
-                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -922,15 +1015,24 @@ def create_tid_gui():
 
     # Frame 1
     frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Parts.grid(row=0, column=0, sticky="e")
-
+    # Dropdown for Type and Parts
+    label_Type = tk.Label(frame1, text="Part Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Type.grid(row=0, column=0, sticky="e")
+    options_type = list(TYPE_MAP.keys())
+    var_type = StringVar()
+    var_type.set(options_type[0])
+    dropdown_type = OptionMenu(frame1, var_type, *options_type)
+    dropdown_type.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_type.config(bg="white")
+    
     # Dropdown Parts
-    options_part = list(DROPDOWN_MAPPING.keys())
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Parts.grid(row=1, column=0, sticky="e")
+    options_part = TYPE_MAP[var_type.get()]
     var1 = StringVar()
     var1.set(options_part[0])
     dropdown_part = OptionMenu(frame1, var1, *options_part)
-    dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_part.grid(row=1, column=1, sticky="w", padx=5, pady=5)
     dropdown_part.config(bg="white")
 
     def datasheet_open():
@@ -949,19 +1051,28 @@ def create_tid_gui():
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
     label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Specifications.grid(row=1, column=0, sticky="e")
+    label_Specifications.grid(row=2, column=0, sticky="e")
 
     label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
-    label_Specification_Typical.grid(row=1, column=2, sticky="e")
+    label_Specification_Typical.grid(row=2, column=2, sticky="e")
 
     # Dropdown Specifications
-    selected_part = options_part[0]
-    options_specifications = DROPDOWN_MAPPING[selected_part]
+    options_specifications = DROPDOWN_MAPPING[options_part[0]]
     var2 = StringVar()
     var2.set(options_specifications[0])
     dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
-    dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+    dropdown_specifications.grid(row=2, column=1, sticky="w", padx=5, pady=5)
     dropdown_specifications.config(bg="white")
+
+    # Update Parts when Type changes
+    def update_parts(*args):
+        parts = TYPE_MAP[var_type.get()]
+        dropdown_part['menu'].delete(0, 'end')
+        for part in parts:
+            dropdown_part['menu'].add_command(label=part, command=tk._setit(var1, part))
+        var1.set(parts[0])  # Set default part
+    # Bind the update_parts function to changes in var_type
+    var_type.trace_add('write', update_parts)
 
     # Function to update Specifications Dropdown based on Part Dropdown selection
     def update_dropdown_specifications(*args):
@@ -1000,64 +1111,130 @@ def create_tid_gui():
 
     # Progress Bar
     progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
-    progress_bar.grid(row=2, column=1, padx=2, pady=2)
+    progress_bar.grid(row=3, column=1, padx=2, pady=2)
     progress_bar.grid_remove()
 
     # Progress bar label 
     progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
-    progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
+    progress_label.grid(row=4, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
     frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    # label_dataset.grid(row=0, column=0, sticky="we")
-
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vcc.grid(row=0, column=0, sticky="e")
-
-    #set default VCC & VEE based on spec
+    
     def update_default_voltage(*args):
-        # Clear the current values of all spinboxes
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vee.delete(0, tk.END)
-        spinbox_temp.delete(0, tk.END)
+        try:
+            if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                frame2.spinbox_vcc.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                frame2.spinbox_vee.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.delete(0, tk.END)
 
-        # Determine if the selected part requires VEE to be 'NA' or a numeric value
-        if var1.get() in ('AD590', 'LM193', 'LM139'):
-            default_voltage = 5
-            spinbox_vee.insert(0, 'NA')  # Set VEE to 'NA'
-            spinbox_vee.config(state='disabled')  # Disable VEE spinbox
-        else:
-            default_voltage = 15
-            spinbox_vee.config(state='normal')  # Enable VEE spinbox
-            spinbox_vee.delete(0, tk.END)
-            spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
+            # Set defaults based on part
+            if var1.get() in ('LM193', 'LM139'):
+                default_voltage = 5
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.insert(0, 'NA')
+                    frame2.spinbox_vee.config(state='disabled')
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
+            else:
+                default_voltage = 15
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.config(state='normal')
+                    frame2.spinbox_vee.delete(0, tk.END)
+                    frame2.spinbox_vee.insert(0, -default_voltage)
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
 
-        # Set VCC, temperature, and fluence values
-        spinbox_vcc.insert(0, default_voltage)  # Set default VCC
-        spinbox_temp.insert(0, 25)  # Set default temperature
-        
-    # Bind the update_default_voltage function to changes in var1 (the part selection)
-    var1.trace_add('write', update_default_voltage)
+            # Set VIN default if present
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.insert(0, 10)  # or whatever default you want
 
-    spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
-    spinbox_vcc.grid(row=0, column=1, sticky="w")
+            # Set temperature default if present
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.insert(0, 25)
+        except Exception as e:
+            print("Error setting default voltages:", e)
+    
+    # Store references to dynamic widgets
+    dynamic_bias_widgets = []
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vee.grid(row=1, column=0,sticky="e")
+    def create_bias_controls():
+        # Remove old widgets
+        for widget in dynamic_bias_widgets:
+            widget.destroy()
+        dynamic_bias_widgets.clear()
 
-    spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
-    spinbox_vee.grid(row=1, column=1, sticky="w")
+        # Determine type for this part
+        selected_part = var1.get()
+        # Find the type for the selected part
+        selected_type = None
+        for t, parts in TYPE_MAP.items():
+            if selected_part in parts:
+                selected_type = t
+                break
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
-    label_temp.grid(row=2, column=0, sticky="e")
+        row = 0
 
-    spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
-    spinbox_temp.grid(row=2, column=1, sticky="w")
+        if selected_type in ("Op_Amp", "Comparator"):
+            # VCC
+            label_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vcc.grid(row=row, column=0, sticky="e")
+            spinbox_vcc = tk.Spinbox(frame2, from_=0, to=25, increment=1, width=7)
+            spinbox_vcc.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vcc, spinbox_vcc])
+            row += 1
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
-    label_temp_temp.grid(row=2, column=2, sticky="e")
+            # VEE
+            label_vee = tk.Label(frame2, text="VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vee.grid(row=row, column=0, sticky="e")
+            spinbox_vee = tk.Spinbox(frame2, from_=-25, to=0, increment=1, width=7)
+            spinbox_vee.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vee, spinbox_vee])
+            row += 1
+
+            # Store for later access
+            frame2.spinbox_vcc = spinbox_vcc
+            frame2.spinbox_vee = spinbox_vee
+            frame2.spinbox_vin = None
+
+        elif selected_type in ("Temp_Sensor", "Voltage_Reg"):
+            # VIN
+            label_vin = tk.Label(frame2, text="VIN (0~10):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vin.grid(row=row, column=0, sticky="e")
+            spinbox_vin = tk.Spinbox(frame2, from_=0, to=10, increment=0.1, width=7)
+            spinbox_vin.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vin, spinbox_vin])
+
+            # Store for later access
+            frame2.spinbox_vcc = None
+            frame2.spinbox_vee = None
+            frame2.spinbox_vin = spinbox_vin
+
+        # Temperature (always shown)
+        label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
+        label_temp.grid(row=row+1, column=0, sticky="e")
+        spinbox_temp = tk.Spinbox(frame2, values=(25,), width=7, state='readonly')
+        spinbox_temp.grid(row=row+1, column=1, sticky="w")
+        dynamic_bias_widgets.extend([label_temp, spinbox_temp])
+        frame2.spinbox_temp = spinbox_temp
+
+        # Set defaults after creating controls
+        update_default_voltage()
+    
+    # Call initially
+    create_bias_controls()
+
+    # Re-create controls when type changes
+    def on_type_change(*args):
+        create_bias_controls()
+        # Optionally reset or update other dependent controls here    
+    var_type.trace_add('write', on_type_change)
+    var1.trace_add('write', on_type_change)
 
     # Frame 3
     frame3 = create_frame(2, 4, "TID Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
@@ -1270,14 +1447,22 @@ def create_ion_fluence_gui():
             # get data from user inputs
             Selected_Part = var1.get()
             Selected_Specification = var2.get()
-            VCC = spinbox_vcc.get()
-            VEE = spinbox_vee.get()
-            Temperature = spinbox_temp.get() # at the moment, the backend can't use this
+            
+            # Use correct spinbox based on type
+            selected_type = var_type.get()
+            if selected_type in ("Temp_Sensor", "Voltage_Reg"):
+                VCC = frame2.spinbox_vin.get() if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin else None
+                VEE = -float(VCC)
+            else:
+                VCC = frame2.spinbox_vcc.get() if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc else None
+                VEE = frame2.spinbox_vee.get() if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee else None
+
+            Temperature = frame2.spinbox_temp.get() if hasattr(frame2, 'spinbox_temp') else None    
             Fluence_Min = fluence_mapping[fluence_min_var.get()]
             Fluence_Max = fluence_mapping[fluence_max_var.get()]
             
             # validate data and put in default values as needed
-            if Selected_Part in ("AD590", "LM193", "LM139"):
+            if Selected_Part in ("LM193", "LM139"):
                 VCC = 5.0 if VCC == "" else float(VCC)
                 VEE = None if VEE == "NA" else float(VEE)
             else:
@@ -1399,23 +1584,26 @@ def create_ion_fluence_gui():
 
     # Clear function 
     def clear_function():
-        # Clear spinbox entries
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vcc.insert(0, 5) 
-
-        spinbox_vee.delete(0, tk.END)
-        spinbox_vee.insert(0, 'NA')  
-
-        spinbox_temp.delete(0, tk.END) 
+        # Clear spinbox entries if they exist
+        if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+            frame2.spinbox_vcc.delete(0, tk.END)
+            frame2.spinbox_vcc.insert(0, 5)
+        if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+            frame2.spinbox_vee.delete(0, tk.END)
+            frame2.spinbox_vee.insert(0, 'NA')
+        if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+            frame2.spinbox_vin.delete(0, tk.END)
+            frame2.spinbox_vin.insert(0, 10)
+        if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+            frame2.spinbox_temp.delete(0, tk.END)
+            frame2.spinbox_temp.insert(0, 25)
         print("Clear all the fields")
 
-    # Find and destroy the existing graph frame and its children
+        # Find and destroy the existing graph frame and its children
         for widget in tid_fluence_frame.winfo_children():
             if isinstance(widget, LabelFrame) and widget.cget("text") == "Graph":
-                # Destroy all children of the graph frame
                 for child in widget.winfo_children():
                     child.destroy()
-                # Destroy the graph frame itself
                 widget.destroy()
 
     for col in range(7):
@@ -1423,15 +1611,24 @@ def create_ion_fluence_gui():
 
     # Frame 1
     frame1 = create_frame(2, 0, "Parts & Spec Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Parts.grid(row=0, column=0, sticky="e")
-
+    # Dropdown for Type and Parts
+    label_Type = tk.Label(frame1, text="Part Type:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Type.grid(row=0, column=0, sticky="e")
+    options_type = list(TYPE_MAP.keys())
+    var_type = StringVar()
+    var_type.set(options_type[0])
+    dropdown_type = OptionMenu(frame1, var_type, *options_type)
+    dropdown_type.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_type.config(bg="white")
+    
     # Dropdown Parts
-    options_part = list(DROPDOWN_MAPPING.keys())
+    label_Parts = tk.Label(frame1, text="Parts:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+    label_Parts.grid(row=1, column=0, sticky="e")
+    options_part = TYPE_MAP[var_type.get()]
     var1 = StringVar()
     var1.set(options_part[0])
     dropdown_part = OptionMenu(frame1, var1, *options_part)
-    dropdown_part.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+    dropdown_part.grid(row=1, column=1, sticky="w", padx=5, pady=5)
     dropdown_part.config(bg="white")
 
     def datasheet_open():
@@ -1450,20 +1647,27 @@ def create_ion_fluence_gui():
     datasheet_button.grid(row=0, column=2, padx=10, pady=5)
 
     label_Specifications = tk.Label(frame1, text="Specifications:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_Specifications.grid(row=1, column=0, sticky="e")
+    label_Specifications.grid(row=2, column=0, sticky="e")
 
     label_Specification_Typical = tk.Label(frame1, text="", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="black")
-    label_Specification_Typical.grid(row=1, column=2, sticky="e")
+    label_Specification_Typical.grid(row=2, column=2, sticky="e")
 
     # Dropdown Specifications
-    selected_part = options_part[0]
-    options_specifications = DROPDOWN_MAPPING[selected_part]
+    options_specifications = DROPDOWN_MAPPING[options_part[0]]
     var2 = StringVar()
     var2.set(options_specifications[0])
     dropdown_specifications = OptionMenu(frame1, var2, *options_specifications)
-    dropdown_specifications.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+    dropdown_specifications.grid(row=2, column=1, sticky="w", padx=5, pady=5)
     dropdown_specifications.config(bg="white")
 
+    def update_parts(*args):
+        parts = TYPE_MAP[var_type.get()]
+        dropdown_part['menu'].delete(0, 'end')
+        for part in parts:
+            dropdown_part['menu'].add_command(label=part, command=tk._setit(var1, part))
+        var1.set(parts[0])  # Set default part, this will trigger create_bias_controls
+    var_type.trace_add('write', update_parts)
+    
     # Function to update Specifications Dropdown based on Part Dropdown selection
     def update_dropdown_specifications(*args):
         selected_part = var1.get()
@@ -1497,64 +1701,118 @@ def create_ion_fluence_gui():
 
     # Progress Bar
     progress_bar = ttk.Progressbar(frame1, style='Maroon.Horizontal.TProgressbar', orient="horizontal", length=100, mode='indeterminate')
-    progress_bar.grid(row=2, column=1, padx=2, pady=2)
+    progress_bar.grid(row=3, column=1, padx=2, pady=2)
     progress_bar.grid_remove()
 
     # Progress bar label 
     progress_label = tk.Label(frame1, text="simulation running", font="Arial 8 italic", bg=BG_COLOR)
-    progress_label.grid(row=3, column=1, padx=2, pady=2, sticky="we")
+    progress_label.grid(row=4, column=1, padx=2, pady=2, sticky="we")
     progress_label.grid_remove()
 
     # Frame 2
     frame2 = create_frame(2, 2, "Bias & Temp Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)
-    # label_dataset = tk.Label(frame2, text="Dataset:", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    # label_dataset.grid(row=0, column=0, sticky="we")
-
-    label_dataset_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vcc.grid(row=0, column=0, sticky="e")
-
-    #set default VCC & VEE based on spec
+    
     def update_default_voltage(*args):
-        # Clear the current values of all spinboxes
-        spinbox_vcc.delete(0, tk.END)
-        spinbox_vee.delete(0, tk.END)
-        spinbox_temp.delete(0, tk.END)
+        try:
+            if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                frame2.spinbox_vcc.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                frame2.spinbox_vee.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.delete(0, tk.END)
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.delete(0, tk.END)
 
-        # Determine if the selected part requires VEE to be 'NA' or a numeric value
-        if var1.get() in ('AD590', 'LM193', 'LM139'):
-            default_voltage = 5
-            spinbox_vee.insert(0, 'NA')  # Set VEE to 'NA'
-            spinbox_vee.config(state='disabled')  # Disable VEE spinbox
-        else:
-            default_voltage = 15
-            spinbox_vee.config(state='normal')  # Enable VEE spinbox
-            spinbox_vee.delete(0, tk.END)
-            spinbox_vee.insert(0, -default_voltage)  # Set VEE to -15
+            if var1.get() in ('LM193', 'LM139'):
+                default_voltage = 5
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.insert(0, 'NA')
+                    frame2.spinbox_vee.config(state='disabled')
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
+            else:
+                default_voltage = 15
+                if hasattr(frame2, 'spinbox_vee') and frame2.spinbox_vee:
+                    frame2.spinbox_vee.config(state='normal')
+                    frame2.spinbox_vee.delete(0, tk.END)
+                    frame2.spinbox_vee.insert(0, -default_voltage)
+                if hasattr(frame2, 'spinbox_vcc') and frame2.spinbox_vcc:
+                    frame2.spinbox_vcc.insert(0, default_voltage)
 
-        # Set VCC, temperature, and fluence values
-        spinbox_vcc.insert(0, default_voltage)  # Set default VCC
-        spinbox_temp.insert(0, 25)  # Set default temperature
-        
-    # Bind the update_default_voltage function to changes in var1 (the part selection)
-    var1.trace_add('write', update_default_voltage)
+            if hasattr(frame2, 'spinbox_vin') and frame2.spinbox_vin:
+                frame2.spinbox_vin.insert(0, 10)
+            if hasattr(frame2, 'spinbox_temp') and frame2.spinbox_temp:
+                frame2.spinbox_temp.insert(0, 25)
+        except Exception as e:
+            print("Error setting default voltages:", e)
+    
+    dynamic_bias_widgets = []
+    
+    def create_bias_controls():
+        # Remove old widgets
+        for widget in dynamic_bias_widgets:
+            widget.destroy()
+        dynamic_bias_widgets.clear()
 
-    spinbox_vcc = tk.Spinbox(frame2, from_=0, to=15, increment=1, width=7)
-    spinbox_vcc.grid(row=0, column=1, sticky="w")
+        # Determine type for this part
+        selected_part = var1.get()
+        selected_type = None
+        for t, parts in TYPE_MAP.items():
+            if selected_part in parts:
+                selected_type = t
+                break
 
-    label_dataset_vee = tk.Label(frame2, text= "VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
-    label_dataset_vee.grid(row=1, column=0,sticky="e")
+        row = 0
 
-    spinbox_vee = tk.Spinbox(frame2, from_=-15, to=0, increment=1, width=7)
-    spinbox_vee.grid(row=1, column=1, sticky="w")
+        if selected_type in ("Op_Amp", "Comparator"):
+            label_vcc = tk.Label(frame2, text="VCC (0~25):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vcc.grid(row=row, column=0, sticky="e")
+            spinbox_vcc = tk.Spinbox(frame2, from_=0, to=25, increment=1, width=7)
+            spinbox_vcc.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vcc, spinbox_vcc])
+            row += 1
 
-    label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
-    label_temp.grid(row=2, column=0, sticky="e")
+            label_vee = tk.Label(frame2, text="VEE (-25~0):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vee.grid(row=row, column=0, sticky="e")
+            spinbox_vee = tk.Spinbox(frame2, from_=-25, to=0, increment=1, width=7)
+            spinbox_vee.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vee, spinbox_vee])
+            row += 1
 
-    spinbox_temp = tk.Spinbox(frame2, from_=25, to=25, increment=0, width=7)
-    spinbox_temp.grid(row=2, column=1, sticky="w")
+            frame2.spinbox_vcc = spinbox_vcc
+            frame2.spinbox_vee = spinbox_vee
+            frame2.spinbox_vin = None
 
-    label_temp_temp = tk.Label(frame2, text="* for further dev", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR, fg="red")
-    label_temp_temp.grid(row=2, column=2, sticky="e")
+        elif selected_type in ("Temp_Sensor", "Voltage_Reg"):
+            label_vin = tk.Label(frame2, text="VIN (0~10):", padx=5, pady=5, font="Arial 9 bold", bg=BG_COLOR)
+            label_vin.grid(row=row, column=0, sticky="e")
+            spinbox_vin = tk.Spinbox(frame2, from_=0, to=10, increment=0.1, width=7)
+            spinbox_vin.grid(row=row, column=1, sticky="w")
+            dynamic_bias_widgets.extend([label_vin, spinbox_vin])
+
+            frame2.spinbox_vcc = None
+            frame2.spinbox_vee = None
+            frame2.spinbox_vin = spinbox_vin
+
+        # Temperature (always shown)
+        label_temp = tk.Label(frame2, text="Circuit Temp (C):", padx=10, pady=10, font="Arial 9 bold", bg=BG_COLOR)
+        label_temp.grid(row=row+1, column=0, sticky="e")
+        spinbox_temp = tk.Spinbox(frame2, values=(25,), width=7, state='readonly')
+        spinbox_temp.grid(row=row+1, column=1, sticky="w")
+        dynamic_bias_widgets.extend([label_temp, spinbox_temp])
+        frame2.spinbox_temp = spinbox_temp
+
+        # Set defaults after creating controls
+        update_default_voltage()
+    
+    # Call initially
+    create_bias_controls()  # Call initially
+
+    def on_type_or_part_change(*args):
+        create_bias_controls()
+
+    var_type.trace_add('write', on_type_or_part_change)
+    var1.trace_add('write', on_type_or_part_change)
 
     # Frame 3
     frame3 = create_frame(2, 4, "ION Testing Conditions", width=2, height=2, borderwidth=0, highlightbackground="brown4", highlightthickness=3, bg=BG_COLOR)

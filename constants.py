@@ -61,6 +61,14 @@ OP27_POSITIVE_IB_TEMPLATE = exe_tools.read_txt_file("testbenches/OP27_PositiveIb
 NPN_DF = exe_tools.read_csv_to_df('csvs/NPN_diode_parameters_V0.csv')
 PNP_DF = exe_tools.read_csv_to_df('csvs/PNP_diode_parameters_V1.csv')
 
+# Mappping for the Part Types
+TYPE_MAP = {
+    'Temp_Sensor': ['AD590'], # Temperature Sensor with V_In
+    'Op_Amp': ['LM741', 'LM124'], # Operations Amplifiers
+    'Comparator': ['LM111', 'LM139', 'LM193'], # Comparators
+    'Voltage_Reg': ['LM117'], # Voltage Regulators with V_In
+}
+
 # Object to Store the mapping of the Part and Specifications Dropdown
 DROPDOWN_MAPPING = {
     "AD590": ["I_out"],
@@ -83,38 +91,38 @@ DOTTER_SPECIFICATIONS = {
     },
     "LM741": {
         "V_os": {"min": 0, "typical": 'NA', "max": 6},
-        "I_ib": {"min": 0, "typical": 80, "max": 500},
-        "I_os": {"min": 0, "typical": 20, "max": 200},
+        "I_ib": {"min": 0, "typical": '80 nA', "max": 500},
+        "I_os": {"min": 0, "typical": '20 nA', "max": 200},
         "Slew_rate": {"min": 0, "typical": 0.5, "max": 0},
         "Supply_current": {"min": 0, "typical": 1.7, "max": 2.8},
         "Ac_gain": {"min": 25, "typical": 'NA', "max": 0},
-        "CMRR": {"min": 80, "typical": 95, "max": 0}
+        "CMRR": {"min": 80, "typical": '95 db', "max": 0}
     },
      "LM124": {
         "V_os": {"min": 0, "typical": 'NA', "max": 7},
-        "I_ib": {"min": 0, "typical": 20, "max": 150}, #Negative in datasheet
-        "I_os": {"min": 0, "typical": 2, "max": 30},
+        "I_ib": {"min": 0, "typical": '20 nA', "max": 150}, #Negative in datasheet
+        "I_os": {"min": 0, "typical": '2 nA', "max": 30},
     },
     "LM193": {
         "I_ol": {"min": 6, "typical": 'NA', "max": 0},
-        "I_oh": {"min": 0, "typical": 0.1, "max": 1000},
-        "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": 25, "max": 300},
+        "I_oh": {"min": 0, "typical": '0.1 nA', "max": 1000},
+        "V_os": {"min": 0, "typical": '2 mV', "max": 5},
+        "I_ib": {"min": 0, "typical": '25 nA', "max": 300},
         "I_os": {"min": 0, "typical": 'NA', "max": 100}
     },
     "LM139": {
-        "I_ol": {"min": 6, "typical": 16, "max": 0},
-        "I_oh": {"min": 0, "typical": 0.1, "max": 1000},
-        "V_os": {"min": 0, "typical": 2, "max": 5},
-        "I_ib": {"min": 0, "typical": 25, "max": 300},
+        "I_ol": {"min": 6, "typical": '16 mA', "max": 0},
+        "I_oh": {"min": 0, "typical": '0.1 nA', "max": 1000},
+        "V_os": {"min": 0, "typical": '2 mV', "max": 5},
+        "I_ib": {"min": 0, "typical": '25 nA', "max": 300},
         "I_os": {"min": 0, "typical": 'NA', "max": 100}
     },
     "LM111": {
         "I_ol": {"min": 0, "typical": 'NA', "max": 0},
         "I_oh": {"min": 0, "typical": 'NA', "max": 0},
-        "V_os": {"min": 0, "typical": 0.7, "max": 4},
-        "I_ib": {"min": 0, "typical": 60, "max": 150},
-        "I_os": {"min": 0, "typical": 4.0, "max": 20}
+        "V_os": {"min": 0, "typical": '0.7 mV' , "max": 4},
+        "I_ib": {"min": 0, "typical": '60 nA', "max": 150},
+        "I_os": {"min": 0, "typical": '4.0 nA', "max": 20}
     },
     "LM117": {
         "V_ref": {"min": 0, "typical": 0, "max": 1.3},
@@ -123,8 +131,8 @@ DOTTER_SPECIFICATIONS = {
     },
     "LM741_Test": {
         "V_os": {"min": 0, "typical": 'NA', "max": 6},
-        "I_ib": {"min": 0, "typical": 80, "max": 500},
-        "I_os": {"min": 0, "typical": 20, "max": 200},
+        "I_ib": {"min": 0, "typical": '80 nA', "max": 500},
+        "I_os": {"min": 0, "typical": '20 nA', "max": 200},
     },
     "OP27": {
         "V_os": {"min": 0, "typical": 0, "max": 0},
